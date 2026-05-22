@@ -1,0 +1,84 @@
+# generated: 2026-05-22
+# last_updated: 2026-05-22
+# project: Miami Home Buying Decision Tool
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-05-22
+last_updated: 2026-05-22-story-1.1-review
+project: Miami Home Buying Decision Tool
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+
+  # ─────────────────────────────────────────────────────────────
+  # Epic 1: Project Foundation & Verified Financial Engine
+  # ─────────────────────────────────────────────────────────────
+  epic-1: in-progress
+  1-1-project-scaffold-module-structure: review
+  1-2-miami-defaults-module: backlog
+  1-3-amortization-schedule-engine: backlog
+  1-4-florida-cost-upfront-cash-engine: backlog
+  1-5-investment-portfolio-special-assessment-engine: backlog
+  1-6-year-5-exit-path-calculations: backlog
+  epic-1-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────
+  # Epic 2: Functional Calculator — Inputs, Real-Time Display & URL Sharing
+  # ─────────────────────────────────────────────────────────────
+  epic-2: backlog
+  2-1-url-state-module-encode-decode-budget-validation: backlog
+  2-2-sidebar-input-sliders-with-miami-defaults: backlog
+  2-3-four-scenario-real-time-calculation-wiring: backlog
+  2-4-monthly-cost-breakdown-display: backlog
+  2-5-headline-break-even-display: backlog
+  2-6-year-5-net-worth-display-all-exit-paths-all-scenarios: backlog
+  2-7-url-sharing-page-load-state-restore: backlog
+  2-8-error-handling-chrome-reliability: backlog
+  epic-2-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────
+  # Epic 3: Trust, Transparency & UX Polish
+  # ─────────────────────────────────────────────────────────────
+  epic-3: backlog
+  3-1-streamlit-theme-global-styles: backlog
+  3-2-disclaimerbanner-component: backlog
+  3-3-sidebar-ux-polish-grouping-labels-caption: backlog
+  3-4-headlinecard-component: backlog
+  3-5-scenariocolumn-component-x4: backlog
+  3-6-exitpathstable-component: backlog
+  3-7-number-formatting-outcome-neutrality-enforcement: backlog
+  3-8-accessibility-attributes: backlog
+  epic-3-retrospective: optional

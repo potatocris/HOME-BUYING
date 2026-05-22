@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Miami Home Buying Tool — Design Directions</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --bg2: #F5F7FA;
+    --text: #1A1D2E;
+    --accent: #2B6CB0;
+    --accent-light: #EBF4FF;
+    --border: #D1D9E6;
+    --muted: #6B7280;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: #E5E7EB; color: var(--text); }
+
+  /* NAV */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: #1A1D2E; color: white; padding: 12px 24px;
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .nav span { font-size: 13px; color: #9CA3AF; margin-right: 8px; }
+  .nav-btn {
+    padding: 6px 14px; border-radius: 20px; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 500; background: #374151; color: white;
+    transition: background 0.15s;
+  }
+  .nav-btn:hover { background: #4B5563; }
+  .nav-btn.active { background: var(--accent); color: white; }
+
+  /* PAGE */
+  .page { display: none; padding: 72px 24px 40px; max-width: 1400px; margin: 0 auto; }
+  .page.active { display: block; }
+  .page-title {
+    font-size: 13px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px;
+  }
+  .page-desc { font-size: 15px; color: var(--text); margin-bottom: 24px; line-height: 1.5; }
+
+  /* MOCKUP FRAME */
+  .mockup {
+    background: var(--bg); border-radius: 8px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .browser-bar {
+    background: #F3F4F6; border-bottom: 1px solid var(--border);
+    padding: 8px 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #EF4444; }
+  .dot-y { background: #F59E0B; }
+  .dot-g { background: #10B981; }
+  .url-bar {
+    flex: 1; background: white; border: 1px solid var(--border);
+    border-radius: 4px; padding: 4px 10px; font-size: 12px; color: var(--muted);
+  }
+
+  /* SHARED UI PARTS */
+  .disclaimer {
+    background: var(--accent-light); border-bottom: 1px solid var(--border);
+    padding: 8px 20px; font-size: 12px; color: var(--accent);
+    display: flex; justify-content: space-between;
+  }
+  .app-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .app-title { font-size: 18px; font-weight: 700; color: var(--text); }
+  .app-meta { font-size: 12px; color: var(--muted); }
+
+  /* HEADLINE CARD */
+  .headline-card {
+    background: var(--bg2); border-radius: 8px;
+    padding: 24px; text-align: center; margin: 16px;
+  }
+  .headline-label { font-size: 14px; color: var(--muted); margin-bottom: 4px; }
+  .headline-amount { font-size: 42px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .headline-sub { font-size: 15px; color: var(--text); margin-top: 6px; }
+  .headline-winner { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  .headline-card.compact { padding: 16px; margin: 12px 16px; }
+  .headline-card.compact .headline-amount { font-size: 32px; }
+
+  /* SCENARIO TABLE */
+  .scenario-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px; padding: 0 16px 16px;
+  }
+  .scenario-col {
+    background: var(--bg2); border-radius: 8px;
+    padding: 14px; border: 1px solid var(--border);
+  }
+  .scenario-col.best { border-color: var(--accent); background: var(--accent-light); }
+  .scenario-header {
+    font-size: 13px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;
+  }
+  .scenario-col.best .scenario-header { color: var(--accent); }
+  .scenario-total { font-size: 22px; font-weight: 700; color: var(--text); }
+  .scenario-sub { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .line-item { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; border-bottom: 1px solid var(--border); }
+  .line-item:last-child { border: none; }
+  .line-label { color: var(--muted); }
+  .line-val { font-weight: 500; }
+  .breakeven { font-size: 12px; color: var(--accent); margin-top: 8px; font-weight: 500; }
+
+  /* SLIDERS */
+  .slider-section {
+    background: var(--bg2); border-radius: 8px;
+    margin: 0 16px 16px; padding: 14px;
+  }
+  .slider-section-title {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    margin-bottom: 12px; display: flex; justify-content: space-between;
+    cursor: pointer;
+  }
+  .slider-row { margin-bottom: 10px; }
+  .slider-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .slider-label span { font-weight: 600; color: var(--text); }
+  .slider-track {
+    width: 100%; height: 4px; background: var(--border); border-radius: 2px;
+    position: relative;
+  }
+  .slider-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+  .slider-thumb {
+    width: 14px; height: 14px; background: var(--accent); border-radius: 50%;
+    position: absolute; top: -5px; border: 2px solid white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+
+  .slider-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
+
+  /* EXIT PATHS TABLE */
+  .exit-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  .exit-table th {
+    text-align: left; padding: 6px 8px; background: var(--bg);
+    color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase;
+    border-bottom: 2px solid var(--border);
+  }
+  .exit-table td { padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  .exit-table tr:last-child td { border: none; }
+  .exit-row-label { font-weight: 600; color: var(--text); }
+  .exit-positive { color: #15803D; font-weight: 500; }
+  .exit-negative { color: #B91C1C; font-weight: 500; }
+
+  /* SIDEBAR LAYOUT */
+  .split-layout { display: flex; height: 580px; }
+  .sidebar-inputs {
+    width: 280px; flex-shrink: 0; background: var(--bg2);
+    border-right: 1px solid var(--border); overflow-y: auto;
+    padding: 16px;
+  }
+  .sidebar-inputs h3 { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+  .main-outputs { flex: 1; overflow-y: auto; padding: 16px; }
+
+  /* BADGE */
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-best { background: var(--accent); color: white; }
+  .badge-label { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+
+  /* SECTION DIVIDER */
+  .section-divider {
+    padding: 10px 20px; font-size: 12px; font-weight: 600;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border); cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--bg);
+  }
+  .chevron { font-size: 10px; }
+
+  /* ANNOTATION */
+  .annotation {
+    background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 6px;
+    padding: 8px 12px; font-size: 12px; color: #92400E; margin: 12px 0;
+    line-height: 1.4;
+  }
+  .annotation strong { display: block; margin-bottom: 2px; }
+
+  /* DESCRIPTION BOX */
+  .direction-meta {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;
+    margin-top: 16px;
+  }
+  .meta-card {
+    background: white; border: 1px solid var(--border); border-radius: 6px;
+    padding: 12px;
+  }
+  .meta-card h4 { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .meta-card p { font-size: 12px; color: var(--text); line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <span>Design Directions →</span>
+  <button class="nav-btn active" onclick="show('d1')">1 · Headline Hero</button>
+  <button class="nav-btn" onclick="show('d2')">2 · Split View</button>
+  <button class="nav-btn" onclick="show('d3')">3 · Dashboard Dense</button>
+  <button class="nav-btn" onclick="show('d4')">4 · Inputs First</button>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- DIRECTION 1: HEADLINE HERO                                         -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div id="d1" class="page active">
+  <div class="page-title">Direction 1</div>
+  <div class="page-desc"><strong>Headline Hero</strong> — Result is the first thing you see, full-width and prominent. 4-scenario comparison below. Inputs collapsed in expanders at the bottom. Closest to the NYT structure.</div>
+
+  <div class="mockup">
+    <div class="browser-bar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="url-bar">https://miami-home-tool.streamlit.app/?hp=300000&rate=6.5&hoa=835&rent=2200...</div>
+    </div>
+
+    <div class="disclaimer">
+      <span>⚠ Financial calculator only · No lender affiliation · Not financial advice</span>
+      <span>Defaults last updated: Jan 2026</span>
+    </div>
+
+    <div class="app-header">
+      <div class="app-title">Miami Home Buying Decision Tool</div>
+      <div class="app-meta">~$300K condo · 5-year horizon · 4 down payment scenarios</div>
+    </div>
+
+    <!-- HEADLINE -->
+    <div class="headline-card">
+      <div class="headline-label">At your current assumptions</div>
+      <div class="headline-amount">$12,400</div>
+      <div class="headline-sub">Renting is better by this amount over 5 years</div>
+      <div class="headline-winner">Best buying scenario: 20% down · Break-even at month 31</div>
+    </div>
+
+    <!-- 4 SCENARIOS -->
+    <div class="scenario-grid">
+      <div class="scenario-col">
+        <div class="scenario-header">5% Down · $15K</div>
+        <div class="scenario-total">$2,134<span style="font-size:13px;font-weight:400;color:var(--muted)">/mo</span></div>
+        <div class="scenario-sub">vs $2,200/mo renting</div>
+        <div class="line-item"><span class="line-label">Mortgage P&I</span><span class="line-val">$1,803</span></div>
+        <div class="line-item"><span class="line-label">PMI</span><span class="line-val">$95</span></div>
+        <div class="line-item"><span class="line-label">HOA</span><span class="line-val">$835</span></div>
+        <div class="line-item"><span class="line-label">Property tax</span><span class="line-val">$312</span></div>
+        <div class="line-item"><span class="line-label">Insurance</span><span class="line-val">$150</span></div>
+        <div class="breakeven">Break-even: month 58</div>
+      </div>
+      <div class="scenario-col">
+        <div class="scenario-header">10% Down · $30K</div>
+        <div class="scenario-total">$1,987<span style="font-size:13px;font-weight:400;color:var(--muted)">/mo</span></div>
+        <div class="scenario-sub">vs $2,200/mo renting</div>
+        <div class="line-item"><span class="line-label">Mortgage P&I</span><span class="line-val">$1,705</span></div>
+        <div class="line-item"><span class="line-label">PMI</span><span class="line-val">$47</span></div>
+        <div class="line-item"><span class="line-label">HOA</span><span class="line-val">$835</span></div>
+        <div class="line-item"><span class="line-label">Property tax</span><span class="line-val">$312</span></div>
+        <div class="line-item"><span class="line-label">Insurance</span><span class="line-val">$150</span></div>
+        <div class="breakeven">Break-even: month 47</div>
+      </div>
+      <div class="scenario-col">
+        <div class="scenario-header">15% Down · $45K</div>
+        <div class="scenario-total">$1,843<span style="font-size:13px;font-weight:400;color:var(--muted)">/mo</span></div>
+        <div class="scenario-sub">vs $2,200/mo renting</div>
+        <div class="line-item"><span class="line-label">Mortgage P&I</span><span class="line-val">$1,609</span></div>
+        <div class="line-item"><span class="line-label">PMI</span><span class="line-val">$0</span></div>
+        <div class="line-item"><span class="line-label">HOA</span><span class="line-val">$835</span></div>
+        <div class="line-item"><span class="line-label">Property tax</span><span class="line-val">$312</span></div>
+        <div class="line-item"><span class="line-label">Insurance</span><span class="line-val">$150</span></div>
+        <div class="breakeven">Break-even: month 38</div>
+      </div>
+      <div class="scenario-col best">
+        <div class="scenario-header">20% Down · $60K <span class="badge badge-best">Best</span></div>
+        <div class="scenario-total">$1,702<span style="font-size:13px;font-weight:400;color:var(--muted)">/mo</span></div>
+        <div class="scenario-sub">vs $2,200/mo renting</div>
+        <div class="line-item"><span class="line-label">Mortgage P&I</span><span class="line-val">$1,516</span></div>
+        <div class="line-item"><span class="line-label">PMI</span><span class="line-val">$0</span></div>
+        <div class="line-item"><span class="line-label">HOA</span><span class="line-val">$835</span></div>
+        <div class="line-item"><span class="line-label">Property tax</span><span class="line-val">$312</span></div>
+        <div class="line-item"><span class="line-label">Insurance</span><span class="line-val">$150</span></div>
+        <div class="breakeven">Break-even: month 31</div>
+      </div>
+    </div>
+
+    <!-- EXPANDERS -->
+    <div class="section-divider">▼ &nbsp;Year-5 Exit Paths &nbsp;<span style="color:var(--accent);font-weight:400;text-transform:none;letter-spacing:0">Net worth at year 5 across all scenarios</span> <span class="chevron">▾</span></div>
+    <div style="padding: 12px 16px; background: var(--bg2);">
+      <table class="exit-table">
+        <tr>
+          <th>Exit path</th><th>5% down</th><th>10% down</th><th>15% down</th><th>20% down</th>
+        </tr>
+        <tr>
+          <td class="exit-row-label">Sell</td>
+          <td>$31,200</td><td>$38,900</td><td>$45,100</td><td class="exit-positive">$51,800</td>
+        </tr>
+        <tr>
+          <td class="exit-row-label">Rent out</td>
+          <td>$28,400</td><td>$35,700</td><td>$42,300</td><td class="exit-positive">$49,100</td>
+        </tr>
+        <tr>
+          <td class="exit-row-label" style="color:var(--accent)">Continue renting</td>
+          <td colspan="4" style="color:var(--accent);font-weight:600">$64,200 — investment portfolio (liquid)</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="section-divider">▶ &nbsp;Adjust Assumptions &nbsp;<span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">12 inputs · click to expand</span> <span class="chevron">▸</span></div>
+    <div class="section-divider" style="color:var(--muted)">▶ &nbsp;Advanced Inputs &nbsp;<span style="font-weight:400;text-transform:none;letter-spacing:0">Special assessment, landlord scenario, seller costs</span> <span class="chevron">▸</span></div>
+  </div>
+
+  <div class="direction-meta">
+    <div class="meta-card">
+      <h4>What works</h4>
+      <p>Result is unmissable — headline is the first thing the eye lands on. Scenario comparison is immediately below. Inputs are out of the way until needed. Closely mirrors NYT structure.</p>
+    </div>
+    <div class="meta-card">
+      <h4>Trade-offs</h4>
+      <p>User must scroll to reach inputs. First-time users may not discover the expanders. Expander section headers need to be obviously clickable.</p>
+    </div>
+    <div class="meta-card">
+      <h4>Best for</h4>
+      <p>Users who trust the Miami defaults and want the answer first. Returning users who know the tool. Shared-link recipients who just want to see the result.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- DIRECTION 2: SPLIT VIEW                                            -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div id="d2" class="page">
+  <div class="page-title">Direction 2</div>
+  <div class="page-desc"><strong>Split View</strong> — Inputs in a sticky left panel; headline + scenarios + exit paths in the main scrollable area. Everything visible simultaneously. Best for power users who want to tweak many inputs.</div>
+
+  <div class="mockup">
+    <div class="browser-bar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="url-bar">https://miami-home-tool.streamlit.app/?hp=300000&rate=6.5&hoa=835...</div>
+    </div>
+    <div class="disclaimer">
+      <span>⚠ Financial calculator only · No lender affiliation · Not financial advice</span>
+      <span>Defaults last updated: Jan 2026</span>
+    </div>
+
+    <div class="split-layout">
+      <!-- LEFT: INPUTS -->
+      <div class="sidebar-inputs">
+        <h3>Assumptions</h3>
+
+        <div class="slider-row">
+          <div class="slider-label">Home price <span>$300,000</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:30%"></div><div class="slider-thumb" style="left:calc(30% - 7px)"></div></div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Mortgage rate <span>6.50%</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:50%"></div><div class="slider-thumb" style="left:calc(50% - 7px)"></div></div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Monthly HOA <span>$835</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:55%"></div><div class="slider-thumb" style="left:calc(55% - 7px)"></div></div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Monthly rent <span>$2,200</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:44%"></div><div class="slider-thumb" style="left:calc(44% - 7px)"></div></div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Appreciation <span>3.0%</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:30%"></div><div class="slider-thumb" style="left:calc(30% - 7px)"></div></div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Investment return <span>7.0%</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:35%"></div><div class="slider-thumb" style="left:calc(35% - 7px)"></div></div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Closing costs <span>3.5%</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:35%"></div><div class="slider-thumb" style="left:calc(35% - 7px)"></div></div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Furniture & improvements <span>$15,000</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:25%"></div><div class="slider-thumb" style="left:calc(25% - 7px)"></div></div>
+        </div>
+
+        <div style="border-top:1px solid var(--border); margin: 12px 0; padding-top: 12px;">
+          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em;">Advanced</div>
+          <div class="slider-row">
+            <div class="slider-label">Special assessment <span>$0</span></div>
+            <div class="slider-track"><div class="slider-fill" style="width:0%"></div><div class="slider-thumb" style="left:calc(0% - 0px)"></div></div>
+          </div>
+          <div class="slider-row">
+            <div class="slider-label">Realtor commission <span>5.5%</span></div>
+            <div class="slider-track"><div class="slider-fill" style="width:55%"></div><div class="slider-thumb" style="left:calc(55% - 7px)"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: OUTPUTS -->
+      <div class="main-outputs">
+        <div class="headline-card compact">
+          <div class="headline-label">At your current assumptions</div>
+          <div class="headline-amount">$12,400</div>
+          <div class="headline-sub">Renting is better by this amount over 5 years</div>
+        </div>
+
+        <div class="scenario-grid" style="padding:0 0 12px;">
+          <div class="scenario-col">
+            <div class="scenario-header">5% Down</div>
+            <div class="scenario-total">$2,134<span style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span></div>
+            <div class="breakeven">Break-even: mo. 58</div>
+          </div>
+          <div class="scenario-col">
+            <div class="scenario-header">10% Down</div>
+            <div class="scenario-total">$1,987<span style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span></div>
+            <div class="breakeven">Break-even: mo. 47</div>
+          </div>
+          <div class="scenario-col">
+            <div class="scenario-header">15% Down</div>
+            <div class="scenario-total">$1,843<span style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span></div>
+            <div class="breakeven">Break-even: mo. 38</div>
+          </div>
+          <div class="scenario-col best">
+            <div class="scenario-header">20% Down <span class="badge badge-best">Best</span></div>
+            <div class="scenario-total">$1,702<span style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span></div>
+            <div class="breakeven">Break-even: mo. 31</div>
+          </div>
+        </div>
+
+        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Year-5 Net Worth</div>
+        <table class="exit-table" style="margin-bottom:12px;">
+          <tr><th>Exit path</th><th>5% down</th><th>10% down</th><th>15% down</th><th>20% down</th></tr>
+          <tr><td class="exit-row-label">Sell</td><td>$31,200</td><td>$38,900</td><td>$45,100</td><td class="exit-positive">$51,800</td></tr>
+          <tr><td class="exit-row-label">Rent out</td><td>$28,400</td><td>$35,700</td><td>$42,300</td><td class="exit-positive">$49,100</td></tr>
+          <tr><td class="exit-row-label" style="color:var(--accent)">Continue renting</td><td colspan="4" style="color:var(--accent);font-weight:600">$64,200 portfolio (liquid)</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="direction-meta">
+    <div class="meta-card">
+      <h4>What works</h4>
+      <p>Inputs and outputs always visible simultaneously — no scrolling, no expanders. Ideal for power users exploring many assumptions. Eliminates the need to scroll down to find sliders.</p>
+    </div>
+    <div class="meta-card">
+      <h4>Trade-offs</h4>
+      <p>Streamlit's sidebar is a different context from the main area — feels like navigation, not input. Requires careful implementation to avoid the sidebar feeling like a settings menu rather than a calculation panel.</p>
+    </div>
+    <div class="meta-card">
+      <h4>Best for</h4>
+      <p>Users who will adjust many inputs in sequence. Cris in "deep analysis" mode. Less ideal for first-time or shared-link visits where the output should dominate.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- DIRECTION 3: DASHBOARD DENSE                                       -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div id="d3" class="page">
+  <div class="page-title">Direction 3</div>
+  <div class="page-desc"><strong>Dashboard Dense</strong> — Everything visible at once on a 1280px+ screen. No expanders, no scrolling required for essential information. Dense but organized. A data dashboard approach.</div>
+
+  <div class="mockup">
+    <div class="browser-bar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="url-bar">https://miami-home-tool.streamlit.app/?hp=300000&rate=6.5&hoa=835...</div>
+    </div>
+    <div class="disclaimer">
+      <span>⚠ Financial calculator only · No lender affiliation · Not financial advice</span>
+      <span>Defaults last updated: Jan 2026</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:0;height:580px;">
+      <!-- LEFT COLUMN: Headline + Inputs -->
+      <div style="border-right:1px solid var(--border);overflow-y:auto;">
+        <div style="padding:16px;">
+          <div class="headline-card compact" style="margin:0 0 12px;">
+            <div class="headline-label" style="font-size:11px;">At current assumptions</div>
+            <div class="headline-amount" style="font-size:28px;">$12,400</div>
+            <div class="headline-sub" style="font-size:12px;">Renting better over 5 yrs</div>
+          </div>
+
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em;">Essential Inputs</div>
+          <div class="slider-row">
+            <div class="slider-label" style="font-size:11px;">Home price <span>$300K</span></div>
+            <div class="slider-track"><div class="slider-fill" style="width:30%"></div><div class="slider-thumb" style="left:calc(30% - 7px)"></div></div>
+          </div>
+          <div class="slider-row">
+            <div class="slider-label" style="font-size:11px;">Mortgage rate <span>6.50%</span></div>
+            <div class="slider-track"><div class="slider-fill" style="width:50%"></div><div class="slider-thumb" style="left:calc(50% - 7px)"></div></div>
+          </div>
+          <div class="slider-row">
+            <div class="slider-label" style="font-size:11px;">Monthly HOA <span>$835</span></div>
+            <div class="slider-track"><div class="slider-fill" style="width:55%"></div><div class="slider-thumb" style="left:calc(55% - 7px)"></div></div>
+          </div>
+          <div class="slider-row">
+            <div class="slider-label" style="font-size:11px;">Monthly rent <span>$2,200</span></div>
+            <div class="slider-track"><div class="slider-fill" style="width:44%"></div><div class="slider-thumb" style="left:calc(44% - 7px)"></div></div>
+          </div>
+          <div class="slider-row">
+            <div class="slider-label" style="font-size:11px;">Appreciation <span>3.0%</span></div>
+            <div class="slider-track"><div class="slider-fill" style="width:30%"></div><div class="slider-thumb" style="left:calc(30% - 7px)"></div></div>
+          </div>
+          <div class="slider-row">
+            <div class="slider-label" style="font-size:11px;">Investment return <span>7.0%</span></div>
+            <div class="slider-track"><div class="slider-fill" style="width:35%"></div><div class="slider-thumb" style="left:calc(35% - 7px)"></div></div>
+          </div>
+          <div class="slider-row">
+            <div class="slider-label" style="font-size:11px;">Closing costs <span>3.5%</span></div>
+            <div class="slider-track"><div class="slider-fill" style="width:35%"></div><div class="slider-thumb" style="left:calc(35% - 7px)"></div></div>
+          </div>
+          <div class="slider-row">
+            <div class="slider-label" style="font-size:11px;">Furniture <span>$15K</span></div>
+            <div class="slider-track"><div class="slider-fill" style="width:25%"></div><div class="slider-thumb" style="left:calc(25% - 7px)"></div></div>
+          </div>
+          <div class="section-divider" style="margin:8px -16px 8px;font-size:11px;">▶ Advanced Inputs</div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: Scenarios + Exit Paths -->
+      <div style="overflow-y:auto;padding:16px;">
+        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Monthly Cost by Scenario</div>
+        <div class="scenario-grid" style="padding:0 0 12px;grid-template-columns:repeat(4,1fr);gap:8px;">
+          <div class="scenario-col" style="padding:10px;">
+            <div class="scenario-header" style="font-size:11px;">5% · $15K</div>
+            <div class="scenario-total" style="font-size:18px;">$2,134</div>
+            <div class="line-item"><span class="line-label">P&I</span><span class="line-val">$1,803</span></div>
+            <div class="line-item"><span class="line-label">PMI</span><span class="line-val">$95</span></div>
+            <div class="line-item"><span class="line-label">HOA</span><span class="line-val">$835</span></div>
+            <div class="line-item"><span class="line-label">Tax</span><span class="line-val">$312</span></div>
+            <div class="breakeven" style="font-size:11px;">B/E: mo. 58</div>
+          </div>
+          <div class="scenario-col" style="padding:10px;">
+            <div class="scenario-header" style="font-size:11px;">10% · $30K</div>
+            <div class="scenario-total" style="font-size:18px;">$1,987</div>
+            <div class="line-item"><span class="line-label">P&I</span><span class="line-val">$1,705</span></div>
+            <div class="line-item"><span class="line-label">PMI</span><span class="line-val">$47</span></div>
+            <div class="line-item"><span class="line-label">HOA</span><span class="line-val">$835</span></div>
+            <div class="line-item"><span class="line-label">Tax</span><span class="line-val">$312</span></div>
+            <div class="breakeven" style="font-size:11px;">B/E: mo. 47</div>
+          </div>
+          <div class="scenario-col" style="padding:10px;">
+            <div class="scenario-header" style="font-size:11px;">15% · $45K</div>
+            <div class="scenario-total" style="font-size:18px;">$1,843</div>
+            <div class="line-item"><span class="line-label">P&I</span><span class="line-val">$1,609</span></div>
+            <div class="line-item"><span class="line-label">PMI</span><span class="line-val">$0</span></div>
+            <div class="line-item"><span class="line-label">HOA</span><span class="line-val">$835</span></div>
+            <div class="line-item"><span class="line-label">Tax</span><span class="line-val">$312</span></div>
+            <div class="breakeven" style="font-size:11px;">B/E: mo. 38</div>
+          </div>
+          <div class="scenario-col best" style="padding:10px;">
+            <div class="scenario-header" style="font-size:11px;">20% · $60K <span class="badge badge-best" style="font-size:10px;">Best</span></div>
+            <div class="scenario-total" style="font-size:18px;">$1,702</div>
+            <div class="line-item"><span class="line-label">P&I</span><span class="line-val">$1,516</span></div>
+            <div class="line-item"><span class="line-label">PMI</span><span class="line-val">$0</span></div>
+            <div class="line-item"><span class="line-label">HOA</span><span class="line-val">$835</span></div>
+            <div class="line-item"><span class="line-label">Tax</span><span class="line-val">$312</span></div>
+            <div class="breakeven" style="font-size:11px;">B/E: mo. 31</div>
+          </div>
+        </div>
+
+        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Year-5 Net Worth</div>
+        <table class="exit-table">
+          <tr><th>Exit path</th><th>5% down</th><th>10% down</th><th>15% down</th><th>20% down</th></tr>
+          <tr><td class="exit-row-label">Sell</td><td>$31,200</td><td>$38,900</td><td>$45,100</td><td class="exit-positive">$51,800</td></tr>
+          <tr><td class="exit-row-label">Rent out</td><td>$28,400</td><td>$35,700</td><td>$42,300</td><td class="exit-positive">$49,100</td></tr>
+          <tr><td class="exit-row-label" style="color:var(--accent)">Continue renting</td><td colspan="4" style="color:var(--accent);font-weight:600">$64,200 — investment portfolio (liquid)</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="direction-meta">
+    <div class="meta-card">
+      <h4>What works</h4>
+      <p>Everything visible without scrolling on a 1280px screen. True dashboard feel — inputs left, outputs right. Power users see the full picture at once. Efficient for deep analysis sessions.</p>
+    </div>
+    <div class="meta-card">
+      <h4>Trade-offs</h4>
+      <p>Headline is smaller and less dominant — the result competes with inputs for attention. More complex to implement well in Streamlit's column system. Feels more like a tool than a calculator.</p>
+    </div>
+    <div class="meta-card">
+      <h4>Best for</h4>
+      <p>Power users who want to see everything simultaneously. Less ideal for shared-link recipients who should see the headline first.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- DIRECTION 4: INPUTS FIRST                                          -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div id="d4" class="page">
+  <div class="page-title">Direction 4</div>
+  <div class="page-desc"><strong>Inputs First</strong> — Traditional calculator flow: inputs at top, result below. Familiar mental model for users who come from spreadsheets and forms. The headline still updates live but lives below the inputs.</div>
+
+  <div class="mockup">
+    <div class="browser-bar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="url-bar">https://miami-home-tool.streamlit.app/?hp=300000&rate=6.5&hoa=835...</div>
+    </div>
+    <div class="disclaimer">
+      <span>⚠ Financial calculator only · No lender affiliation · Not financial advice</span>
+      <span>Defaults last updated: Jan 2026</span>
+    </div>
+    <div class="app-header">
+      <div class="app-title">Miami Home Buying Decision Tool</div>
+      <div class="app-meta">Defaults last updated: Jan 2026</div>
+    </div>
+
+    <!-- INPUTS FIRST -->
+    <div class="slider-section" style="margin:12px 16px 8px;">
+      <div class="slider-section-title">Essential Inputs <span style="font-weight:400;color:var(--muted);font-size:12px;">Miami defaults loaded ✓</span></div>
+      <div class="slider-grid">
+        <div class="slider-row">
+          <div class="slider-label">Home price <span>$300,000</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:30%"></div><div class="slider-thumb" style="left:calc(30% - 7px)"></div></div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Monthly HOA <span>$835</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:55%"></div><div class="slider-thumb" style="left:calc(55% - 7px)"></div></div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Mortgage rate <span>6.50%</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:50%"></div><div class="slider-thumb" style="left:calc(50% - 7px)"></div></div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Monthly rent <span>$2,200</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:44%"></div><div class="slider-thumb" style="left:calc(44% - 7px)"></div></div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Appreciation <span>3.0%</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:30%"></div><div class="slider-thumb" style="left:calc(30% - 7px)"></div></div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Investment return <span>7.0%</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:35%"></div><div class="slider-thumb" style="left:calc(35% - 7px)"></div></div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--accent);cursor:pointer;margin-top:8px;">▶ Show advanced inputs (closing costs, special assessment, landlord scenario)</div>
+    </div>
+
+    <!-- RESULT BELOW -->
+    <div class="headline-card" style="margin: 8px 16px;">
+      <div class="headline-label">At your current assumptions</div>
+      <div class="headline-amount">$12,400</div>
+      <div class="headline-sub">Renting is better by this amount over 5 years</div>
+      <div class="headline-winner">Best buying scenario: 20% down · Break-even at month 31</div>
+    </div>
+
+    <div class="scenario-grid">
+      <div class="scenario-col">
+        <div class="scenario-header">5% Down · $15K</div>
+        <div class="scenario-total">$2,134<span style="font-size:13px;font-weight:400;color:var(--muted)">/mo</span></div>
+        <div class="breakeven">Break-even: month 58</div>
+      </div>
+      <div class="scenario-col">
+        <div class="scenario-header">10% Down · $30K</div>
+        <div class="scenario-total">$1,987<span style="font-size:13px;font-weight:400;color:var(--muted)">/mo</span></div>
+        <div class="breakeven">Break-even: month 47</div>
+      </div>
+      <div class="scenario-col">
+        <div class="scenario-header">15% Down · $45K</div>
+        <div class="scenario-total">$1,843<span style="font-size:13px;font-weight:400;color:var(--muted)">/mo</span></div>
+        <div class="breakeven">Break-even: month 38</div>
+      </div>
+      <div class="scenario-col best">
+        <div class="scenario-header">20% Down · $60K <span class="badge badge-best">Best</span></div>
+        <div class="scenario-total">$1,702<span style="font-size:13px;font-weight:400;color:var(--muted)">/mo</span></div>
+        <div class="breakeven">Break-even: month 31</div>
+      </div>
+    </div>
+    <div style="height:8px;"></div>
+  </div>
+
+  <div class="direction-meta">
+    <div class="meta-card">
+      <h4>What works</h4>
+      <p>Familiar mental model — "fill in the form, then see the result." Lower learning curve for users coming from spreadsheets. Inputs are prominent and feel intentional rather than secondary.</p>
+    </div>
+    <div class="meta-card">
+      <h4>Trade-offs</h4>
+      <p>Headline is below the fold — shared-link recipients must scroll to see the result. Goes against the "results first" experience principle. Weakens the tool's core differentiator (instant answer on load).</p>
+    </div>
+    <div class="meta-card">
+      <h4>Best for</h4>
+      <p>Users who feel anxious about trusting defaults and want to verify inputs before seeing results. Less aligned with the project's core experience principles.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
