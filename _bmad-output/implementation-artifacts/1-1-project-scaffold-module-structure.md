@@ -1,6 +1,6 @@
 # Story 1.1: Project Scaffold & Module Structure
 
-Status: review
+Status: done
 
 ## Story
 
@@ -49,6 +49,14 @@ So that I can run the app locally and have a clean structure to build into.
   - [x] Run `streamlit run app.py` — confirm browser loads without error
   - [x] Run `python -c "import calculations; import defaults; import url_state"` — confirm all modules importable
   - [x] Confirm `calculations.py` has no Streamlit imports
+
+### Review Findings
+
+- [x] [Review][Patch] BOM character in requirements.txt corrupts first package name on some pip/CI environments [requirements.txt:1]
+- [x] [Review][Defer] No python_requires or minimum Python version constraint documented — deferred, pre-existing
+- [x] [Review][Defer] pyvenv.cfg points to Anaconda interpreter; recreating venv could target different Python version — deferred, pre-existing
+- [x] [Review][Defer] watchdog hot-reload may interact with OneDrive sync in Documents folder — deferred, pre-existing
+- [x] [Review][Defer] URL budget definition (full URL vs query-string-only) unresolved — deferred to Story 2.1
 
 ## Dev Notes
 

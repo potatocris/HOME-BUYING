@@ -7,7 +7,9 @@
       "Bash(python)",
       "Bash(set PYTHONIOENCODING=utf-8)",
       "Bash(python \"C:\\\\Users\\\\criss\\\\Documents\\\\Home Buying\\\\_bmad\\\\scripts\\\\resolve_config.py\" --project-root \"C:\\\\Users\\\\criss\\\\Documents\\\\Home Buying\" --key agents)",
-      "Bash(python *)"
+      "Bash(python *)",
+      "Bash(git diff *)",
+      "Bash(echo \"---EXIT:$?---\")"
     ]
   }
 }
