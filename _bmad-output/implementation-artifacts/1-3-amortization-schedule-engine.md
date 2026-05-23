@@ -1,6 +1,6 @@
 # Story 1.3: Amortization Schedule Engine
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -20,27 +20,27 @@ So that all monthly cost and equity figures are based on accurate, testable mort
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Install pytest and update requirements.txt** (AC: 7)
-  - [ ] Run: `pip install pytest`
-  - [ ] Regenerate requirements.txt **BOM-free** — use the exact command from Dev Notes
-  - [ ] Verify: `pytest --version` shows a version (no error)
+- [x] **Task 1: Install pytest and update requirements.txt** (AC: 7)
+  - [x] Run: `pip install pytest`
+  - [x] Regenerate requirements.txt **BOM-free** — use the exact command from Dev Notes
+  - [x] Verify: `pytest --version` shows a version (no error)
 
-- [ ] **Task 2: Create test file with FAILING tests first** (AC: 1–7)
-  - [ ] Create directory `tests/` at project root
-  - [ ] Create empty `tests/__init__.py`
-  - [ ] Create `tests/test_calculations.py` with all tests from Dev Notes
-  - [ ] Run `pytest tests/` — confirm tests FAIL (function doesn't exist yet)
+- [x] **Task 2: Create test file with FAILING tests first** (AC: 1–7)
+  - [x] Create directory `tests/` at project root
+  - [x] Create empty `tests/__init__.py`
+  - [x] Create `tests/test_calculations.py` with all tests from Dev Notes
+  - [x] Run `pytest tests/` — confirm tests FAIL (function doesn't exist yet)
 
-- [ ] **Task 3: Implement `calculate_amortization_schedule` in `calculations.py`** (AC: 1–6)
-  - [ ] Replace the stub docstring with the full module docstring + `PMI_ANNUAL_RATE` constant + the function — see Dev Notes for exact spec
-  - [ ] Function must return a list of 60 dicts with keys: `month`, `principal`, `interest`, `balance`, `pmi`
-  - [ ] Use the standard amortization formula from Dev Notes — do NOT approximate
-  - [ ] Apply PMI to original loan amount at `PMI_ANNUAL_RATE` — stops permanently at first month `balance ≤ 0.78 * price`
-  - [ ] Accept percentages as human-readable floats: `down_pct=5` means 5%, `annual_rate=6.5` means 6.5%
+- [x] **Task 3: Implement `calculate_amortization_schedule` in `calculations.py`** (AC: 1–6)
+  - [x] Replace the stub docstring with the full module docstring + `PMI_ANNUAL_RATE` constant + the function — see Dev Notes for exact spec
+  - [x] Function must return a list of 60 dicts with keys: `month`, `principal`, `interest`, `balance`, `pmi`
+  - [x] Use the standard amortization formula from Dev Notes — do NOT approximate
+  - [x] Apply PMI to original loan amount at `PMI_ANNUAL_RATE` — stops permanently at first month `balance ≤ 0.78 * price`
+  - [x] Accept percentages as human-readable floats: `down_pct=5` means 5%, `annual_rate=6.5` means 6.5%
 
-- [ ] **Task 4: Run tests and verify all pass** (AC: 1–7)
-  - [ ] Run: `pytest tests/ -v` — all tests must be GREEN
-  - [ ] Run ARCH-3 check: `python -c "import ast, sys; tree = ast.parse(open('calculations.py').read()); sl = [n for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom)) and any('streamlit' in (getattr(n,'module','') or '') or any('streamlit' in a.name for a in getattr(n,'names',[])) for _ in [n])]; print('ARCH-3 PASS' if not sl else 'FAIL')"`
+- [x] **Task 4: Run tests and verify all pass** (AC: 1–7)
+  - [x] Run: `pytest tests/ -v` — all tests must be GREEN
+  - [x] Run ARCH-3 check: `python -c "import ast, sys; tree = ast.parse(open('calculations.py').read()); sl = [n for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom)) and any('streamlit' in (getattr(n,'module','') or '') or any('streamlit' in a.name for a in getattr(n,'names',[])) for _ in [n])]; print('ARCH-3 PASS' if not sl else 'FAIL')"`
 
 ## Dev Notes
 
@@ -327,17 +327,30 @@ Use these to validate your implementation against independent sources (Excel PMT
 
 ### Agent Model Used
 
-_to be filled by dev agent_
+claude-sonnet-4-6
 
 ### Debug Log References
 
+- pytest already installed in venv (9.0.3); Task 1 was primarily a requirements.txt update.
+- RED phase confirmed: ImportError on `calculate_amortization_schedule` before implementation.
+- GREEN phase: all 14 tests passed on first run after implementation.
+- ARCH-3 check passed: no streamlit import detected in calculations.py.
+
 ### Completion Notes List
+
+- Implemented `calculate_amortization_schedule(price, down_pct, annual_rate)` returning 60 monthly dicts.
+- Standard 30-year amortization formula with edge case for zero interest rate.
+- PMI at 0.8% annual of original loan, cancelled permanently once balance ≤ 78% of purchase price.
+- 14 pytest tests cover structure, financial accuracy (NFR5 within $1/month), and PMI logic (NFR6).
+- All 14 tests GREEN; ARCH-3 invariant maintained (no streamlit import).
 
 ### File List
 
-- `calculations.py` (modified — implement calculate_amortization_schedule)
+- `calculations.py` (modified — added PMI_ANNUAL_RATE constant and calculate_amortization_schedule function)
 - `tests/__init__.py` (new — empty)
-- `tests/test_calculations.py` (new — pytest suite)
-- `requirements.txt` (modified — add pytest, BOM-free)
+- `tests/test_calculations.py` (new — 14 pytest tests covering all ACs)
+- `requirements.txt` (modified — added pytest==9.0.3, BOM-free regeneration)
 
 ## Change Log
+
+- 2026-05-23: Implemented Story 1.3 — amortization schedule engine with PMI logic; 14 tests all pass.
