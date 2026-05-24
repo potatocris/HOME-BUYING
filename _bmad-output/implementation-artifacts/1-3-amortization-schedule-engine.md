@@ -1,6 +1,6 @@
 # Story 1.3: Amortization Schedule Engine
 
-Status: review
+Status: done
 
 ## Story
 
@@ -41,6 +41,10 @@ So that all monthly cost and equity figures are based on accurate, testable mort
 - [x] **Task 4: Run tests and verify all pass** (AC: 1–7)
   - [x] Run: `pytest tests/ -v` — all tests must be GREEN
   - [x] Run ARCH-3 check: `python -c "import ast, sys; tree = ast.parse(open('calculations.py').read()); sl = [n for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom)) and any('streamlit' in (getattr(n,'module','') or '') or any('streamlit' in a.name for a in getattr(n,'names',[])) for _ in [n])]; print('ARCH-3 PASS' if not sl else 'FAIL')"`
+
+### Review Findings
+
+- [x] [Review][Decision] PMI origination threshold wrong: 20% down (80% LTV) should be PMI-free from day 1 per Homeowners Protection Act, but code uses the 78% cancellation threshold as the only rule — charging ~27 months of PMI to 20%-down buyers who wouldn't owe it in reality. **FIXED:** Changed `pmi_cancelled = False` → `pmi_cancelled = (loan / price) <= 0.80`. Updated tests to reflect: 20% down has zero PMI all 60 months; added `test_pmi_applies_at_15pct_down` to cover the >80% LTV case. [`calculations.py:22`]
 
 ## Dev Notes
 

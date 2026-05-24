@@ -70,23 +70,22 @@ def test_pmi_applies_all_60_months_at_5pct_down():
     assert all(record["pmi"] > 0 for record in schedule)
 
 
-def test_pmi_applies_initially_at_20pct_down():
-    # 20% down: initial balance $240K > $234K threshold → PMI applies month 1
+def test_no_pmi_at_20pct_down_from_day_one():
+    # HPA: 20% down = 80% LTV at origination → PMI never required
     record = calculate_amortization_schedule(300_000, 20, 6.5)[0]
-    assert record["pmi"] > 0
-
-
-def test_pmi_cancelled_by_month_60_at_20pct_down():
-    # 20% down: PMI should cancel around month 27
-    record = calculate_amortization_schedule(300_000, 20, 6.5)[-1]
     assert record["pmi"] == 0.0
 
 
-def test_pmi_cancels_around_month_27_at_20pct_down():
+def test_no_pmi_all_60_months_at_20pct_down():
+    # 20% down: PMI is 0 for every month in the 5-year window
     schedule = calculate_amortization_schedule(300_000, 20, 6.5)
-    cancel_month = next(r["month"] for r in schedule if r["pmi"] == 0.0)
-    # Tolerance: allow month 24–32 (formula precision variation)
-    assert 24 <= cancel_month <= 32
+    assert all(record["pmi"] == 0.0 for record in schedule)
+
+
+def test_pmi_applies_at_15pct_down():
+    # 15% down = 85% LTV at origination > 80% threshold → PMI applies month 1
+    record = calculate_amortization_schedule(300_000, 15, 6.5)[0]
+    assert record["pmi"] > 0
 
 
 def test_pmi_stays_cancelled_once_triggered():
@@ -358,3 +357,20 @@ def test_exit_continue_renting_with_growth():
     portfolio = calculate_investment_portfolio(15_000, 0, 7, 60)
     result = calculate_exit_continue_renting(portfolio)
     assert result > 15_000
+
+
+def test_exit_continue_renting_empty_portfolio_returns_zero():
+    # Guard: empty list (e.g., months=0) returns 0.0 instead of IndexError
+    assert calculate_exit_continue_renting([]) == 0.0
+
+
+# ── Net-worth reconciliation (Story 1.6 AC5) ─────────────────────────────────
+
+def test_exit_rent_out_reconciles_cashflow_plus_equity_ac5():
+    # AC5: cumulative monthly cashflows + terminal equity = function return
+    income, vac, mgmt, carrying, appreciated, balance = 2_000, 5, 10, 1_000, 350_000, 270_000
+    result = calculate_exit_rent_out(income, vac, mgmt, carrying, appreciated, balance)
+    effective_income = income * (1 - vac / 100)           # 1_900
+    net_monthly = effective_income * (1 - mgmt / 100) - carrying  # 710
+    expected = net_monthly * 60 + (appreciated - balance)  # 42_600 + 80_000
+    assert abs(result - expected) < 0.01

@@ -1,6 +1,6 @@
 # Story 1.5: Investment Portfolio & Special Assessment Engine
 
-Status: review
+Status: done
 
 ## Story
 

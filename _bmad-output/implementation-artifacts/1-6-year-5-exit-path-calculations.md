@@ -1,6 +1,6 @@
 # Story 1.6: Year-5 Exit Path Calculations
 
-Status: review
+Status: done
 
 ## Story
 
@@ -38,6 +38,13 @@ So that the net worth comparison across Sell, Rent Out, and Continue Renting is 
 - [x] **Task 3: Run all tests and verify** (AC: 6–7)
   - [x] Run: `pytest tests/ -v` — all tests must be GREEN (39 existing + new)
   - [x] Run ARCH-3 check: `python -c "import ast; tree = ast.parse(open('calculations.py').read()); sl = [n for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom)) and any('streamlit' in (getattr(n,'module','') or '') or any('streamlit' in a.name for a in getattr(n,'names',[])) for _ in [n])]; print('ARCH-3 PASS' if not sl else 'FAIL')"`
+
+### Review Findings
+
+- [x] [Review][Patch] `calculate_exit_continue_renting` raises IndexError on empty list — **FIXED:** `return portfolio_values[-1] if portfolio_values else 0.0` [`calculations.py:109`]
+- [x] [Review][Patch] Story 1.6 AC5 not tested — **FIXED:** Added `test_exit_rent_out_reconciles_cashflow_plus_equity_ac5` and `test_exit_continue_renting_empty_portfolio_returns_zero` to `tests/test_calculations.py` — 55/55 passing.
+- [x] [Review][Defer] No input validation for `down_pct >= 100`, negative inputs, months outside 1–60 range, or vacancy/mgmt rates > 100 — Epic 2 UI sliders will enforce valid ranges [`calculations.py`] — deferred, pre-existing scope
+- [x] [Review][Defer] pytest, pluggy, iniconfig, Pygments in `requirements.txt` — dev-only deps belong in a separate requirements-dev.txt [`requirements.txt`] — deferred, pre-existing scope
 
 ## Dev Notes
 

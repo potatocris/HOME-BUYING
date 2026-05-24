@@ -21,7 +21,8 @@ def calculate_amortization_schedule(price, down_pct, annual_rate):
 
     pmi_threshold = 0.78 * price
     pmi_monthly = loan * PMI_ANNUAL_RATE / 12
-    pmi_cancelled = False
+    # HPA: ≥20% down (≤80% LTV at origination) means no PMI ever required
+    pmi_cancelled = (loan / price) <= 0.80
 
     balance = loan
     schedule = []
@@ -106,4 +107,4 @@ def calculate_exit_rent_out(monthly_rental_income, vacancy_rate_pct, mgmt_fee_pc
 
 def calculate_exit_continue_renting(portfolio_values):
     """Returns renter's portfolio value at month 60 (FR21)."""
-    return portfolio_values[-1]
+    return portfolio_values[-1] if portfolio_values else 0.0

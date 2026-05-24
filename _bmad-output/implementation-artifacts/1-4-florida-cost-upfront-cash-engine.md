@@ -1,6 +1,6 @@
 # Story 1.4: Florida Cost & Upfront Cash Engine
 
-Status: review
+Status: done
 
 ## Story
 
