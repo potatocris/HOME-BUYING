@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-22
-last_updated: 2026-05-23-story-2.1-review
+last_updated: 2026-05-23-story-2.1-done
 project: Miami Home Buying Decision Tool
 project_key: NOKEY
 tracking_system: file-system
@@ -53,13 +53,14 @@ development_status:
   1-4-florida-cost-upfront-cash-engine: done
   1-5-investment-portfolio-special-assessment-engine: done
   1-6-year-5-exit-path-calculations: done
+  1-7-epic1-calculation-bug-fixes: done
   epic-1-retrospective: optional
 
   # ─────────────────────────────────────────────────────────────
   # Epic 2: Functional Calculator — Inputs, Real-Time Display & URL Sharing
   # ─────────────────────────────────────────────────────────────
   epic-2: in-progress
-  2-1-url-state-module-encode-decode-budget-validation: review
+  2-1-url-state-module-encode-decode-budget-validation: done
   2-2-sidebar-input-sliders-with-miami-defaults: backlog
   2-3-four-scenario-real-time-calculation-wiring: backlog
   2-4-monthly-cost-breakdown-display: backlog

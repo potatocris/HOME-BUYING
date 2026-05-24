@@ -12,7 +12,8 @@
       "Bash(echo \"---EXIT:$?---\")",
       "Bash(\".venv\\\\Scripts\\\\pip.exe\" show *)",
       "Bash(\".venv\\\\Scripts\\\\pytest.exe\" tests/ -v)",
-      "Bash(.venv\\\\Scripts\\\\pytest.exe tests/ -v)"
+      "Bash(.venv\\\\Scripts\\\\pytest.exe tests/ -v)",
+      "Bash(ls C:\\\\Users\\\\criss\\\\Documents\\\\Home Buying *)"
     ]
   }
 }

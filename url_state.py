@@ -54,7 +54,7 @@ def decode_state(query_params: dict) -> dict:
             result[const_name] = default_val
         else:
             try:
-                parsed = int(float(raw)) if short_key in INT_PARAMS else float(raw)
+                parsed = int(raw) if short_key in INT_PARAMS else float(raw)
                 if not isinstance(parsed, int) and not math.isfinite(parsed):
                     raise ValueError
                 result[const_name] = parsed

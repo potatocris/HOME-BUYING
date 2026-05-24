@@ -1,6 +1,6 @@
 # Story 2.1: URL State Module (Encode/Decode + Budget Validation)
 
-Status: review
+Status: done
 
 ## Story
 
@@ -374,6 +374,18 @@ C:\Users\criss\Documents\Home Buying\
 - [Source: architecture.md — ARCH-5 (url_state.py validates URL budget), modular structure]
 - [Source: deferred-work.md — URL budget measurement decision resolved: query string only]
 - [Source: defaults.py — all 16 configurable constants + their default values]
+
+### Review Findings
+
+- [x] [Review][Decision] Out-of-scope changes to `calculations.py` and `tests/test_calculations.py` — Resolved: logged retroactively as Story 1.7 (`done`) in sprint-status.yaml.
+- [x] [Review][Decision] `int(float(raw))` truncates INT_PARAMS instead of falling back to default — Resolved: changed to `int(raw)` to match spec reference; "12.9" now falls back to default. Also eliminates the `OverflowError` risk for INT_PARAMS (`int('inf')` raises ValueError, which is caught).
+- [x] [Review][Patch] `OverflowError` on `?sam=inf` not caught in `decode_state` [url_state.py:57] — Resolved automatically by Decision 2: `int(raw)` raises `ValueError` on `'inf'` (no OverflowError possible). 77/77 tests passing.
+- [x] [Review][Defer] URL length check uses unencoded pairs — not a real issue for all-numeric params [url_state.py:38] — deferred, pre-existing design assumption
+- [x] [Review][Defer] No range/domain validation in `decode_state` — out-of-scope; Story 2.8 handles error display and slider bounds enforce valid values [url_state.py:47] — deferred, pre-existing
+- [x] [Review][Defer] Performance test threshold 100ms/call is very lenient — not a correctness gate [tests/test_url_state.py:150,160] — deferred, pre-existing
+- [x] [Review][Defer] `calculate_exit_continue_renting` silent 0.0 for empty list hides upstream bugs [calculations.py:110] — deferred, intentional design decision
+- [x] [Review][Defer] `pmi_cancelled` no guard for price==0 ZeroDivisionError [calculations.py:24] — deferred, pre-existing; slider enforces minimum price
+- [x] [Review][Defer] `test_exit_rent_out_reconciles_cashflow_plus_equity_ac5` tautological formula — deferred, test quality observation
 
 ## Dev Agent Record
 
