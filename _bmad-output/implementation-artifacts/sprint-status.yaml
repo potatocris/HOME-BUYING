@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-22
-last_updated: 2026-05-23-story-2.1-done
+last_updated: 2026-05-24-story-2.2-done
 project: Miami Home Buying Decision Tool
 project_key: NOKEY
 tracking_system: file-system
@@ -61,7 +61,7 @@ development_status:
   # ─────────────────────────────────────────────────────────────
   epic-2: in-progress
   2-1-url-state-module-encode-decode-budget-validation: done
-  2-2-sidebar-input-sliders-with-miami-defaults: backlog
+  2-2-sidebar-input-sliders-with-miami-defaults: done
   2-3-four-scenario-real-time-calculation-wiring: backlog
   2-4-monthly-cost-breakdown-display: backlog
   2-5-headline-break-even-display: backlog
