@@ -35,11 +35,17 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-22
-last_updated: 2026-05-24-story-2.2-done
+last_updated: 2026-05-25
 project: Miami Home Buying Decision Tool
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
+
+# SPRINT CHANGE: 2026-05-25
+# Approved proposal: sprint-change-proposal-2026-05-25.md
+# Primary pivot: main page = Rent+Invest vs Buy+Invest comparison with
+# variable horizon (5–30 yr), line chart, and annual table.
+# 4-scenario comparison moves to pages/scenarios.py (Page 2, deferred polish).
 
 development_status:
 
@@ -54,6 +60,7 @@ development_status:
   1-5-investment-portfolio-special-assessment-engine: done
   1-6-year-5-exit-path-calculations: done
   1-7-epic1-calculation-bug-fixes: done
+  1-8-variable-horizon-engine-extension: done   # NEW: parameterize months; add buyer portfolio + annual snapshots
   epic-1-retrospective: optional
 
   # ─────────────────────────────────────────────────────────────
@@ -62,12 +69,14 @@ development_status:
   epic-2: in-progress
   2-1-url-state-module-encode-decode-budget-validation: done
   2-2-sidebar-input-sliders-with-miami-defaults: done
-  2-3-four-scenario-real-time-calculation-wiring: backlog
-  2-4-monthly-cost-breakdown-display: backlog
-  2-5-headline-break-even-display: backlog
-  2-6-year-5-net-worth-display-all-exit-paths-all-scenarios: backlog
-  2-7-url-sharing-page-load-state-restore: backlog
-  2-8-error-handling-chrome-reliability: backlog
+  2-3-four-scenario-real-time-calculation-wiring: done    # code moves to pages/scenarios.py via story 2.4
+  2-4-multi-page-app-setup: backlog                       # REPURPOSED: move 4-scenario to pages/scenarios.py; clear app.py main area
+  2-5-rent-vs-buy-two-option-calculation-wiring: backlog  # REVISED: compute rent+invest vs buy+invest over variable horizon
+  2-6-timeline-slider-headline-display: backlog           # REVISED: timeline slider (5–30yr) + rent-vs-buy headline
+  2-7-wealth-over-time-chart: backlog                     # REVISED: Plotly line chart, 2 lines, crossover marker
+  2-8-annual-wealth-breakdown-table: backlog              # REVISED: year-by-year table (Year | Rent | Buy | Diff | Better)
+  2-9-url-sharing-page-load-state-restore: backlog        # SHIFTED from 2.7: updated param set (adds yr, single dp)
+  2-10-error-handling-chrome-reliability: backlog         # SHIFTED from 2.8: unchanged scope
   epic-2-retrospective: optional
 
   # ─────────────────────────────────────────────────────────────
@@ -76,10 +85,10 @@ development_status:
   epic-3: backlog
   3-1-streamlit-theme-global-styles: backlog
   3-2-disclaimerbanner-component: backlog
-  3-3-sidebar-ux-polish-grouping-labels-caption: backlog
-  3-4-headlinecard-component: backlog
-  3-5-scenariocolumn-component-x4: backlog
-  3-6-exitpathstable-component: backlog
+  3-3-sidebar-ux-polish-grouping-labels-caption: backlog  # minor: add timeline slider grouping
+  3-4-headlinecard-component: backlog                     # updated: rent vs buy verdict at selected horizon
+  3-5-chart-and-table-polish: backlog                     # REVISED from scenariocolumn-x4: line chart styling + annual table formatting
+  3-6-page2-scenario-comparison-polish: backlog           # REVISED from exitpathstable: 4-scenario page polish (deferred, low priority)
   3-7-number-formatting-outcome-neutrality-enforcement: backlog
   3-8-accessibility-attributes: backlog
   epic-3-retrospective: optional

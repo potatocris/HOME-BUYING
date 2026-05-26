@@ -8,6 +8,8 @@ from calculations import (
     calculate_exit_sell,
     calculate_exit_rent_out,
     calculate_exit_continue_renting,
+    calculate_buyer_investment_portfolio,
+    get_annual_snapshots,
 )
 
 
@@ -374,3 +376,179 @@ def test_exit_rent_out_reconciles_cashflow_plus_equity_ac5():
     net_monthly = effective_income * (1 - mgmt / 100) - carrying  # 710
     expected = net_monthly * 60 + (appreciated - balance)  # 42_600 + 80_000
     assert abs(result - expected) < 0.01
+
+
+# ── calculate_amortization_schedule months param (Story 1.8) ─────────────────
+
+def test_amortization_default_still_60_months():
+    # No-arg call: backward compatible default returns exactly 60 records
+    result = calculate_amortization_schedule(300_000, 5, 6.5)
+    assert len(result) == 60
+
+
+def test_amortization_custom_months_120():
+    # 10-year horizon: 120 months of data
+    result = calculate_amortization_schedule(300_000, 10, 6.5, months=120)
+    assert len(result) == 120
+
+
+def test_amortization_custom_months_360():
+    # Full 30-year schedule
+    result = calculate_amortization_schedule(300_000, 20, 6.5, months=360)
+    assert len(result) == 360
+
+
+def test_amortization_custom_months_sequential():
+    # Month numbers must run 1 .. N regardless of N
+    result = calculate_amortization_schedule(300_000, 10, 6.5, months=120)
+    for i, record in enumerate(result):
+        assert record["month"] == i + 1
+
+
+def test_amortization_360_months_balance_near_zero():
+    # After 360 payments the loan should be essentially paid off
+    result = calculate_amortization_schedule(300_000, 20, 6.5, months=360)
+    final_balance = result[-1]["balance"]
+    assert abs(final_balance) < 1.00  # within $1 of $0
+
+
+def test_amortization_120_months_balance_less_than_60_months():
+    # At month 120 more principal has been paid than at month 60
+    balance_60 = calculate_amortization_schedule(300_000, 5, 6.5, months=60)[-1]["balance"]
+    balance_120 = calculate_amortization_schedule(300_000, 5, 6.5, months=120)[-1]["balance"]
+    assert balance_120 < balance_60
+
+
+# ── calculate_buyer_investment_portfolio (Story 1.8) ─────────────────────────
+
+def test_buyer_portfolio_returns_correct_length():
+    surpluses = [100.0] * 60
+    result = calculate_buyer_investment_portfolio(surpluses, 7.0)
+    assert len(result) == 60
+
+
+def test_buyer_portfolio_variable_length():
+    surpluses = [200.0] * 120
+    result = calculate_buyer_investment_portfolio(surpluses, 5.0)
+    assert len(result) == 120
+
+
+def test_buyer_portfolio_all_zero_surplus_zero_rate():
+    # No surplus, no return → all zeros
+    result = calculate_buyer_investment_portfolio([0.0] * 60, 0.0)
+    assert all(v == 0.0 for v in result)
+
+
+def test_buyer_portfolio_all_zero_surplus_with_rate():
+    # Starting balance is $0; with no contributions nothing grows
+    result = calculate_buyer_investment_portfolio([0.0] * 60, 7.0)
+    assert all(abs(v) < 0.01 for v in result)
+
+
+def test_buyer_portfolio_zero_rate_flat_accumulation():
+    # At 0% return: each month simply adds the surplus
+    surpluses = [1_000.0] * 60
+    result = calculate_buyer_investment_portfolio(surpluses, 0.0)
+    assert abs(result[0] - 1_000.0) < 0.01
+    assert abs(result[59] - 60_000.0) < 0.01
+
+
+def test_buyer_portfolio_matches_investment_portfolio_constant_surplus():
+    # Constant surplus with compounding must match calculate_investment_portfolio(0, surplus, rate, months)
+    surplus = 500.0
+    rate = 7.0
+    months = 60
+    surpluses = [surplus] * months
+    buyer_result = calculate_buyer_investment_portfolio(surpluses, rate)
+    reference = calculate_investment_portfolio(0, surplus, rate, months)
+    for i in range(months):
+        assert abs(buyer_result[i] - reference[i]) < 0.01
+
+
+def test_buyer_portfolio_month1_formula():
+    # Month 1: (0 + surplus) * (1 + monthly_rate)
+    surplus = 300.0
+    annual_rate = 6.0
+    monthly_rate = 6.0 / 100 / 12
+    result = calculate_buyer_investment_portfolio([surplus], annual_rate)
+    expected = (0 + surplus) * (1 + monthly_rate)
+    assert abs(result[0] - expected) < 0.01
+
+
+def test_buyer_portfolio_month2_compounds_month1():
+    # Month 2 must compound month 1 balance
+    surplus = 300.0
+    annual_rate = 6.0
+    monthly_rate = 6.0 / 100 / 12
+    result = calculate_buyer_investment_portfolio([surplus, surplus], annual_rate)
+    month1 = (0 + surplus) * (1 + monthly_rate)
+    month2 = (month1 + surplus) * (1 + monthly_rate)
+    assert abs(result[1] - month2) < 0.01
+
+
+def test_buyer_portfolio_variable_surpluses():
+    # Mix of zero and non-zero surpluses
+    surpluses = [0.0, 200.0, 0.0, 300.0]
+    rate = 12.0
+    result = calculate_buyer_investment_portfolio(surpluses, rate)
+    # m1: (0 + 0) * 1.01 = 0
+    assert abs(result[0] - 0.0) < 0.01
+    # m2: (0 + 200) * 1.01 = 202
+    assert abs(result[1] - 202.0) < 0.01
+    # m3: (202 + 0) * 1.01 = 204.02
+    assert abs(result[2] - 204.02) < 0.01
+    # m4: (204.02 + 300) * 1.01 = 504.02 * 1.01 ≈ 509.0602
+    assert abs(result[3] - 509.0602) < 0.01
+
+
+def test_buyer_portfolio_grows_with_positive_surpluses():
+    surpluses = [500.0] * 60
+    result = calculate_buyer_investment_portfolio(surpluses, 7.0)
+    assert result[-1] > result[0]
+
+
+# ── get_annual_snapshots (Story 1.8) ─────────────────────────────────────────
+
+def test_annual_snapshots_60_months_returns_5_values():
+    values = list(range(1, 61))
+    result = get_annual_snapshots(values)
+    assert len(result) == 5
+
+
+def test_annual_snapshots_120_months_returns_10_values():
+    values = list(range(1, 121))
+    result = get_annual_snapshots(values)
+    assert len(result) == 10
+
+
+def test_annual_snapshots_360_months_returns_30_values():
+    values = list(range(1, 361))
+    result = get_annual_snapshots(values)
+    assert len(result) == 30
+
+
+def test_annual_snapshots_correct_indices():
+    # Values [1, 2, ..., 60]: month 12 → value 12, month 24 → value 24, etc.
+    values = list(range(1, 61))
+    result = get_annual_snapshots(values)
+    assert result[0] == 12   # month 12
+    assert result[1] == 24   # month 24
+    assert result[2] == 36   # month 36
+    assert result[3] == 48   # month 48
+    assert result[4] == 60   # month 60
+
+
+def test_annual_snapshots_reflects_portfolio_year_ends():
+    # Integration: get year-end values from a real portfolio
+    portfolio = calculate_investment_portfolio(0, 1_000, 0, 60)  # zero-rate → $1K, $2K, ..., $60K
+    snapshots = get_annual_snapshots(portfolio)
+    assert len(snapshots) == 5
+    assert abs(snapshots[0] - 12_000.0) < 0.01  # year 1 end
+    assert abs(snapshots[4] - 60_000.0) < 0.01  # year 5 end
+
+
+def test_annual_snapshots_partial_year_ignored():
+    # 65 months: 5 complete years, 5 leftover months → still 5 snapshots
+    values = list(range(1, 66))
+    result = get_annual_snapshots(values)
+    assert len(result) == 5

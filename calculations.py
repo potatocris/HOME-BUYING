@@ -8,11 +8,11 @@ unit-testable against a reference spreadsheet.
 PMI_ANNUAL_RATE = 0.008  # 0.8% of original loan amount per year
 
 
-def calculate_amortization_schedule(price, down_pct, annual_rate):
-    """Returns list of 60 monthly records: month, principal, interest, balance, pmi."""
+def calculate_amortization_schedule(price, down_pct, annual_rate, months=60):
+    """Returns list of `months` monthly records: month, principal, interest, balance, pmi."""
     loan = price * (1 - down_pct / 100)
     r = annual_rate / 100 / 12
-    n = 360  # 30-year mortgage
+    n = 360  # 30-year mortgage payment term (always 360, regardless of observation window)
 
     if r == 0:
         monthly_payment = loan / n
@@ -27,7 +27,7 @@ def calculate_amortization_schedule(price, down_pct, annual_rate):
     balance = loan
     schedule = []
 
-    for month in range(1, 61):
+    for month in range(1, months + 1):
         interest = balance * r
         principal = monthly_payment - interest
         balance -= principal
@@ -108,3 +108,26 @@ def calculate_exit_rent_out(monthly_rental_income, vacancy_rate_pct, mgmt_fee_pc
 def calculate_exit_continue_renting(portfolio_values):
     """Returns renter's portfolio value at month 60 (FR21)."""
     return portfolio_values[-1] if portfolio_values else 0.0
+
+
+def calculate_buyer_investment_portfolio(monthly_surplus_list, annual_rate):
+    """Returns list of buyer's side-portfolio values compounded monthly from $0 (Story 1.8).
+
+    monthly_surplus_list: per-month amounts of max(0, rent - buying_cost_m) for each month.
+    annual_rate: investment return rate (percent, e.g. 7.0 for 7%).
+    """
+    monthly_rate = annual_rate / 100 / 12
+    portfolio = []
+    balance = 0.0
+    for surplus in monthly_surplus_list:
+        balance = (balance + surplus) * (1 + monthly_rate)
+        portfolio.append(balance)
+    return portfolio
+
+
+def get_annual_snapshots(monthly_values):
+    """Returns year-end values from a monthly list, sampled at months 12, 24, 36...
+
+    len(result) == len(monthly_values) // 12
+    """
+    return [monthly_values[i] for i in range(11, len(monthly_values), 12)]
