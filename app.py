@@ -2,6 +2,23 @@ import streamlit as st
 import defaults
 import calculations
 
+
+def _headline_card(winner: str, difference: float, horizon_years: int, break_even_text: str) -> str:
+    return f"""
+<div aria-label="Financial comparison headline"
+     style="background:#F5F7FA; padding:1.5rem 2rem; border-radius:8px; margin-bottom:1.5rem;">
+  <p style="color:#1A1D2E; font-size:0.875rem; margin:0 0 0.25rem 0;">At current assumptions</p>
+  <p style="color:#2B6CB0; font-size:2.5rem; font-weight:700; margin:0 0 0.25rem 0; line-height:1.1;">
+    ${difference:,.0f}
+  </p>
+  <p style="color:#1A1D2E; font-size:1.1rem; font-weight:400; margin:0 0 0.5rem 0;">
+    {winner} is better by ${difference:,.0f} over {horizon_years} year{"s" if horizon_years != 1 else ""}
+  </p>
+  <p style="color:#1A1D2E; font-size:0.875rem; margin:0; opacity:0.75;">{break_even_text}</p>
+</div>
+"""
+
+
 st.set_page_config(page_title="Miami Home Buying Decision Tool", layout="wide")
 
 # ── Sidebar: all 16 input sliders ─────────────────────────────────────────────
@@ -26,6 +43,11 @@ with st.sidebar:
         min_value=3.0, max_value=30.0,
         value=defaults.DOWN_PCT, step=0.5,
         format="%.1f%%",
+    )
+    horizon_years = st.select_slider(
+        "Comparison Horizon (years)",
+        options=[5, 10, 15, 20, 25, 30],
+        value=defaults.HORIZON_YEARS,
     )
     mortgage_rate = st.slider(
         "Mortgage Rate (%)",
@@ -126,8 +148,6 @@ with st.sidebar:
         )
 
 # ── Rent vs Buy Two-Path Calculation ──────────────────────────────────────────
-# Story 2.6 replaces the next line with the timeline slider widget.
-horizon_years = defaults.HORIZON_YEARS
 total_months  = horizon_years * 12
 
 schedule     = calculations.calculate_amortization_schedule(
@@ -174,13 +194,33 @@ for month_idx, rec in enumerate(schedule):
 renter_annual = calculations.get_annual_snapshots(renter_monthly)
 buyer_annual  = calculations.get_annual_snapshots(buyer_monthly)
 
+# ── Break-even detection ───────────────────────────────────────────────────────
+break_even_year = None
+if len(renter_annual) >= 2:
+    prev_renting_ahead = renter_annual[0] >= buyer_annual[0]
+    for i in range(1, len(renter_annual)):
+        curr_renting_ahead = renter_annual[i] >= buyer_annual[i]
+        if curr_renting_ahead != prev_renting_ahead:
+            break_even_year = i + 1  # 1-indexed: renter_annual[0] = year 1
+            break
+        prev_renting_ahead = curr_renting_ahead
+
+if break_even_year is not None:
+    break_even_text = f"Break-even at year {break_even_year}"
+else:
+    break_even_text = f"No break-even within {horizon_years} year{'s' if horizon_years != 1 else ''}"
+
 # ── Main area ─────────────────────────────────────────────────────────────────
-# Story 2.6 replaces this placeholder with the headline + timeline slider.
-# Story 2.7 adds the Plotly chart. Story 2.8 adds the annual table.
+final_renter = renter_annual[-1]
+final_buyer  = buyer_annual[-1]
+if final_renter >= final_buyer:
+    winner     = "Renting"
+    difference = final_renter - final_buyer
+else:
+    winner     = "Buying"
+    difference = final_buyer - final_renter
+
 st.title("Miami Home Buying Decision Tool")
-st.info(
-    f"Calculations ready — {horizon_years}-year horizon, {down_pct:.1f}% down. "
-    f"Year {horizon_years}: Renting → ${renter_annual[-1]:,.0f} | "
-    f"Buying → ${buyer_annual[-1]:,.0f}. "
-    f"Chart and headline coming in Stories 2.6–2.7."
-)
+st.markdown(_headline_card(winner, difference, horizon_years, break_even_text), unsafe_allow_html=True)
+# Story 2.7 adds the Plotly chart here.
+# Story 2.8 adds the annual breakdown table here.
