@@ -2,6 +2,7 @@ import streamlit as st
 import defaults
 import calculations
 import plotly.graph_objects as go
+import pandas as pd
 
 
 def _headline_card(winner: str, difference: float, horizon_years: int, break_even_text: str) -> str:
@@ -18,6 +19,12 @@ def _headline_card(winner: str, difference: float, horizon_years: int, break_eve
   <p style="color:#1A1D2E; font-size:0.875rem; margin:0; opacity:0.75;">{break_even_text}</p>
 </div>
 """
+
+
+def _fmt_dollar(v: float) -> str:
+    if v < 0:
+        return f"(${abs(v):,.0f})"
+    return f"${v:,.0f}"
 
 
 st.set_page_config(page_title="Miami Home Buying Decision Tool", layout="wide")
@@ -280,4 +287,17 @@ fig.update_layout(
 )
 
 st.plotly_chart(fig, use_container_width=True)
-# Story 2.8 adds the annual breakdown table here.
+# ── Annual wealth breakdown table ─────────────────────────────────────────────
+table_rows = []
+for i, (r, b) in enumerate(zip(renter_annual, buyer_annual)):
+    diff = r - b
+    table_rows.append({
+        "Year": i + 1,
+        "Rent + Invest": _fmt_dollar(r),
+        "Buy + Invest": _fmt_dollar(b),
+        "Difference": _fmt_dollar(diff),
+        "Better": "Renting" if r >= b else "Buying",
+    })
+
+st.subheader("Annual Wealth Breakdown")
+st.dataframe(pd.DataFrame(table_rows), hide_index=True, use_container_width=True)
