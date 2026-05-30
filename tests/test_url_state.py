@@ -160,3 +160,27 @@ def test_decode_is_fast_nfr3():
         decode_state(params)
     elapsed_ms = (time.perf_counter() - start) * 1000 / 1000
     assert elapsed_ms < 100, f"decode_state took {elapsed_ms:.2f}ms avg (NFR3 limit: 100ms)"
+
+
+# ── New params: dp (DOWN_PCT) and yr (HORIZON_YEARS) ──────────────────────────
+
+def test_decode_horizon_years_as_int():
+    result = decode_state({'yr': '15'})
+    assert result['HORIZON_YEARS'] == 15
+    assert isinstance(result['HORIZON_YEARS'], int)
+
+
+def test_decode_down_pct_as_float():
+    result = decode_state({'dp': '10.0'})
+    assert result['DOWN_PCT'] == 10.0
+    assert isinstance(result['DOWN_PCT'], float)
+
+
+def test_roundtrip_dp_and_yr():
+    values = _miami_defaults()
+    values['DOWN_PCT'] = 15.0
+    values['HORIZON_YEARS'] = 20
+    decoded = decode_state(encode_state(values))
+    assert decoded['DOWN_PCT'] == 15.0
+    assert decoded['HORIZON_YEARS'] == 20
+    assert isinstance(decoded['HORIZON_YEARS'], int)

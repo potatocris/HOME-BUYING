@@ -22,9 +22,11 @@ PARAM_MAP = {
     'vac':  'VACANCY_RATE',
     'mgmt': 'PROPERTY_MGMT_FEE_PCT',
     'rc':   'REALTOR_COMMISSION_PCT',
+    'dp':   'DOWN_PCT',
+    'yr':   'HORIZON_YEARS',
 }
 
-INT_PARAMS = {'sam'}
+INT_PARAMS = {'sam', 'yr'}
 
 URL_MAX_QUERY_LENGTH = 2000
 
