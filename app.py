@@ -1,6 +1,7 @@
 import streamlit as st
 import defaults
 import calculations
+import plotly.graph_objects as go
 
 
 def _headline_card(winner: str, difference: float, horizon_years: int, break_even_text: str) -> str:
@@ -222,5 +223,61 @@ else:
 
 st.title("Miami Home Buying Decision Tool")
 st.markdown(_headline_card(winner, difference, horizon_years, break_even_text), unsafe_allow_html=True)
-# Story 2.7 adds the Plotly chart here.
+# ── Wealth over time chart ─────────────────────────────────────────────────────
+x_vals        = list(range(horizon_years + 1))
+renter_series = [upfront_cash] + renter_annual
+buyer_series  = [0.0] + buyer_annual
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(
+    x=x_vals, y=renter_series,
+    name="Rent + Invest",
+    mode="lines+markers",
+    line=dict(color="#2B6CB0", width=2),
+    marker=dict(size=5),
+))
+fig.add_trace(go.Scatter(
+    x=x_vals, y=buyer_series,
+    name="Buy + Invest",
+    mode="lines+markers",
+    line=dict(color="#ED8936", width=2),
+    marker=dict(size=5),
+))
+
+if break_even_year is not None:
+    fig.add_vline(
+        x=break_even_year,
+        line_dash="dash",
+        line_color="#A0AEC0",
+        annotation_text=f"Break-even: year {break_even_year}",
+        annotation_position="top",
+    )
+
+fig.update_layout(
+    template="simple_white",
+    title=dict(text="Total Wealth Over Time", font=dict(color="#1A1D2E", size=16)),
+    xaxis=dict(
+        title=dict(text="Year", font=dict(color="#1A1D2E")),
+        tickfont=dict(color="#1A1D2E"),
+        tickmode="linear", dtick=5, tick0=0,
+        gridcolor="#E2E8F0", showgrid=True,
+    ),
+    yaxis=dict(
+        title=dict(text="Total Net Wealth", font=dict(color="#1A1D2E")),
+        tickfont=dict(color="#1A1D2E"),
+        tickprefix="$", tickformat=",",
+        gridcolor="#E2E8F0", showgrid=True,
+    ),
+    legend=dict(
+        font=dict(color="#1A1D2E"),
+        orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+    ),
+    plot_bgcolor="#FFFFFF",
+    paper_bgcolor="#FFFFFF",
+    margin=dict(l=0, r=0, t=60, b=0),
+    hovermode="x unified",
+    font=dict(color="#1A1D2E"),
+)
+
+st.plotly_chart(fig, use_container_width=True)
 # Story 2.8 adds the annual breakdown table here.
