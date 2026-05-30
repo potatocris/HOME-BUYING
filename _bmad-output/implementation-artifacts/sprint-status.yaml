@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-22
-last_updated: 2026-05-29  # story 2-5 done
+last_updated: 2026-05-30  # story 2-6 ready-for-dev
 project: Miami Home Buying Decision Tool
 project_key: NOKEY
 tracking_system: file-system
@@ -72,7 +72,7 @@ development_status:
   2-3-four-scenario-real-time-calculation-wiring: done    # code moves to pages/scenarios.py via story 2.4
   2-4-multi-page-app-setup: done                           # REPURPOSED: move 4-scenario to pages/scenarios.py; clear app.py main area
   2-5-rent-vs-buy-two-option-calculation-wiring: done         # REVISED: compute rent+invest vs buy+invest over variable horizon
-  2-6-timeline-slider-headline-display: backlog           # REVISED: timeline slider (5–30yr) + rent-vs-buy headline
+  2-6-timeline-slider-headline-display: ready-for-dev     # REVISED: timeline slider (5–30yr) + rent-vs-buy headline
   2-7-wealth-over-time-chart: backlog                     # REVISED: Plotly line chart, 2 lines, crossover marker
   2-8-annual-wealth-breakdown-table: backlog              # REVISED: year-by-year table (Year | Rent | Buy | Diff | Better)
   2-9-url-sharing-page-load-state-restore: backlog        # SHIFTED from 2.7: updated param set (adds yr, single dp)
