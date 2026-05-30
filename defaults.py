@@ -24,6 +24,10 @@ INVESTMENT_RETURN_RATE = 7.0  # Long-run stock market return assumption (% per y
 # -- Upfront Costs -------------------------------------------------------------
 FURNITURE_BUDGET = 15_000.0   # Furniture and improvements estimate (dollars)
 
+# -- Scenario Inputs -----------------------------------------------------------
+DOWN_PCT = 20.0           # Default down payment % for rent-vs-buy main page (conventional, no PMI)
+HORIZON_YEARS = 10        # Default comparison horizon (years); Story 2.6 uses as timeline slider default
+
 # -- Special Assessment --------------------------------------------------------
 SPECIAL_ASSESSMENT_AMOUNT = 0.0  # Default: no assessment (dollars)
 SPECIAL_ASSESSMENT_MONTH = 1   # Month the assessment lands (1-60)

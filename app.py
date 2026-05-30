@@ -1,5 +1,6 @@
 import streamlit as st
 import defaults
+import calculations
 
 st.set_page_config(page_title="Miami Home Buying Decision Tool", layout="wide")
 
@@ -19,6 +20,12 @@ with st.sidebar:
         min_value=100_000.0, max_value=1_000_000.0,
         value=defaults.HOME_PRICE, step=5_000.0,
         format="$%.0f",
+    )
+    down_pct = st.slider(
+        "Down Payment (%)",
+        min_value=3.0, max_value=30.0,
+        value=defaults.DOWN_PCT, step=0.5,
+        format="%.1f%%",
     )
     mortgage_rate = st.slider(
         "Mortgage Rate (%)",
@@ -118,6 +125,62 @@ with st.sidebar:
             format="%.2f%%",
         )
 
+# ── Rent vs Buy Two-Path Calculation ──────────────────────────────────────────
+# Story 2.6 replaces the next line with the timeline slider widget.
+horizon_years = defaults.HORIZON_YEARS
+total_months  = horizon_years * 12
+
+schedule     = calculations.calculate_amortization_schedule(
+    home_price, down_pct, mortgage_rate, months=total_months
+)
+upfront_cash = calculations.calculate_upfront_cash(
+    home_price, down_pct, closing_cost_pct, furniture_budget
+)
+monthly_rate = investment_return_rate / 100 / 12
+
+# Pass 1: renter portfolio (variable contributions) + buyer surplus list
+renter_balance     = upfront_cash
+renter_monthly     = []
+buyer_surplus_list = []
+
+for month_idx, rec in enumerate(schedule):
+    m        = month_idx + 1
+    p_and_i  = rec["interest"] + rec["principal"]
+    pmi_m    = rec["pmi"]
+    tax_m    = calculations.calculate_monthly_property_tax(home_price, property_tax_rate, m)
+    ins_m    = ho6_insurance_annual / 12
+    buying_cost_m = p_and_i + pmi_m + hoa_monthly + tax_m + ins_m
+
+    renter_contribution = max(0.0, buying_cost_m - market_rent)
+    renter_balance      = (renter_balance + renter_contribution) * (1 + monthly_rate)
+    renter_monthly.append(renter_balance)
+
+    buyer_surplus_list.append(max(0.0, market_rent - buying_cost_m))
+
+# Buyer side portfolio: $0 start, grows from monthly surpluses
+buyer_portfolio = calculations.calculate_buyer_investment_portfolio(
+    buyer_surplus_list, investment_return_rate
+)
+
+# Pass 2: buyer total wealth = home equity + side portfolio
+buyer_monthly = []
+for month_idx, rec in enumerate(schedule):
+    m                   = month_idx + 1
+    appreciated_value_m = home_price * (1 + appreciation_rate / 100) ** (m / 12)
+    home_equity_m       = appreciated_value_m - rec["balance"]
+    buyer_monthly.append(home_equity_m + buyer_portfolio[month_idx])
+
+# Annual snapshots for chart (Story 2.7) and table (Story 2.8)
+renter_annual = calculations.get_annual_snapshots(renter_monthly)
+buyer_annual  = calculations.get_annual_snapshots(buyer_monthly)
+
 # ── Main area ─────────────────────────────────────────────────────────────────
+# Story 2.6 replaces this placeholder with the headline + timeline slider.
+# Story 2.7 adds the Plotly chart. Story 2.8 adds the annual table.
 st.title("Miami Home Buying Decision Tool")
-st.info("Rent vs Buy comparison coming in Stories 2.5–2.8.")
+st.info(
+    f"Calculations ready — {horizon_years}-year horizon, {down_pct:.1f}% down. "
+    f"Year {horizon_years}: Renting → ${renter_annual[-1]:,.0f} | "
+    f"Buying → ${buyer_annual[-1]:,.0f}. "
+    f"Chart and headline coming in Stories 2.6–2.7."
+)

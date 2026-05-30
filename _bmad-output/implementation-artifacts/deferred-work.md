@@ -37,6 +37,22 @@
 - **Market rent held constant over 60-month horizon** (`app.py:241`): `market_rent` slider value is used as a fixed monthly figure for the full 5-year renter portfolio calculation. Real rent inflates annually. Acceptable simplification for v1; revisit if tool is shared publicly.
 - **`monthly_contribution` clamped at 0 when buying cheaper than renting** (`app.py:241`): `max(0.0, total_m1 - market_rent)` — when buying costs less than market rent (possible for 20% down in high-rent markets), the buyer's monthly surplus is not modeled anywhere. Renter's portfolio gets no new contributions even though buying would be freeing up cash. Modeling limitation; would require redesigning the surplus tracking for both sides.
 
+## Deferred from: code review of 2-5-rent-vs-buy-two-option-calculation-wiring (2026-05-29)
+
+- **`renter_annual[-1]` / `buyer_annual[-1]` IndexError if annual list is empty** (`app.py` display block): `get_annual_snapshots` returns `[]` if monthly list has fewer than 12 entries. Can't crash today (HORIZON_YEARS=10 → 120 months), but Story 2.6 must set timeline slider minimum ≥ 1 year (5 years in practice) to prevent crash. Guard needed before `st.info(... renter_annual[-1] ...)`.
+- **`calculate_monthly_property_tax` docstring says "(1-60)" but now called for months 1–360** (`calculations.py`): Stale docstring — function logic is correct for any month (homestead exemption applies from month 13 onward, indefinitely). Update docstring to remove the "(1-60)" range hint in a future cleanup story.
+- **Furniture budget included in renter's opportunity cost portfolio** (`app.py`): `upfront_cash` includes `furniture_budget` ($15K default), which inflates the renter's investment starting capital by $15K. A renter would also buy furniture, so this isn't truly "opportunity cost." At 7% return over 10 years, this overstates renter wealth by ~$29K. Pre-existing design assumption from Story 2.3; revisit if tool is shared publicly.
+
+## Deferred from: code review of 2-4-multi-page-app-setup (2026-05-29)
+
+- **`_fmt` formats negative numbers as `$-X` with no sign guard** (`pages/scenarios.py`): Negative `exit_sell` or negative `home_equity` renders as `$-12,345` — not a valid currency display. Pre-existing; cosmetic until a future story displays these values.
+- **`break_even_month=None` silent trap + `_fmt(None)` crash** (`pages/scenarios.py`): When no break-even month is found in 60 months, `break_even_month` stays `None`. Not displayed in Story 2.4, but a future story rendering it will either show "None" or raise `ValueError: Unknown format code 'f' for NoneType`. Guard needed before Story 2.5+ renders break-even.
+- **No engine guard on negative mortgage rate** (`calculations.py`): `calculate_amortization_schedule` has no assertion against negative rates. UI slider (min=3.0%) blocks this today. Pre-existing.
+- **Floating-point amortization can produce a tiny negative balance** (`calculations.py`): Rounding error over 60 iterations can cause the terminal balance to go a few cents below zero, slightly inflating `exit_sell` net proceeds. Pre-existing, theoretical.
+- **`appreciation_rate=0` + realtor fees can make `exit_sell` silently negative** (`pages/scenarios.py`): At 0% appreciation the undiscounted loan balance + fees can exceed the flat home price, producing a negative exit value with no warning. Not displayed in Story 2.4. Pre-existing.
+- **Landlord exit uses static month-1 carrying costs** (`pages/scenarios.py`): Homestead exemption reduces property tax from month 13 (overstating landlord costs) and PMI is excluded (understating costs for <20% down). Known simplification, pre-existing.
+- **No explicit `key=` args on sliders in `pages/scenarios.py`** (`pages/scenarios.py` sidebar): Streamlit auto-generates keys from label strings. Both pages use identical labels. In the current multi-page setup this is fine, but when Story 2.9 wires `st.query_params` URL state, the lack of explicit keys can cause state bleed between pages. Add `key=` args before Story 2.9.
+
 ## Deferred from: code review of 1-8-variable-horizon-engine-extension (2026-05-25)
 
 - **`months > 360` in `calculate_amortization_schedule` produces negative balances** (`calculations.py`): After month 360 the loan is fully amortized; continuing the loop causes principal to keep subtracting from a ~$0 balance, yielding negative values. Per the established project policy, engine-layer input validation is deferred to the UI; Story 2.6's timeline slider caps the horizon at 30 years (360 months).
