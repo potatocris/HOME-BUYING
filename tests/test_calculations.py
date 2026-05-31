@@ -4,7 +4,6 @@ from calculations import (
     calculate_monthly_property_tax,
     calculate_upfront_cash,
     calculate_investment_portfolio,
-    get_special_assessment_for_month,
     calculate_exit_sell,
     calculate_exit_rent_out,
     calculate_exit_continue_renting,
@@ -225,38 +224,6 @@ def test_portfolio_monthly_not_annual_compounding():
 def test_portfolio_custom_months_length():
     result = calculate_investment_portfolio(5_000, 200, 5, 12)
     assert len(result) == 12
-
-
-# ── get_special_assessment_for_month (Story 1.5) ─────────────────────────────
-
-def test_special_assessment_returns_amount_on_correct_month():
-    result = get_special_assessment_for_month(5_000, 12, 12)
-    assert result == 5_000.0
-
-
-def test_special_assessment_returns_zero_before_month():
-    result = get_special_assessment_for_month(5_000, 12, 11)
-    assert result == 0.0
-
-
-def test_special_assessment_returns_zero_after_month():
-    result = get_special_assessment_for_month(5_000, 12, 13)
-    assert result == 0.0
-
-
-def test_special_assessment_zero_amount_always_zero():
-    assert get_special_assessment_for_month(0, 12, 12) == 0.0
-    assert get_special_assessment_for_month(0, 1, 1) == 0.0
-
-
-def test_special_assessment_first_month():
-    result = get_special_assessment_for_month(10_000, 1, 1)
-    assert result == 10_000.0
-
-
-def test_special_assessment_last_month():
-    result = get_special_assessment_for_month(7_500, 60, 60)
-    assert result == 7_500.0
 
 
 # ── calculate_exit_sell (Story 1.6) ──────────────────────────────────────────

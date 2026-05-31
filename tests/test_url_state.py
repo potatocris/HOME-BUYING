@@ -61,12 +61,6 @@ def test_decode_home_price_as_float():
     assert isinstance(result['HOME_PRICE'], float)
 
 
-def test_decode_special_assessment_month_as_int():
-    result = decode_state({'sam': '12'})
-    assert result['SPECIAL_ASSESSMENT_MONTH'] == 12
-    assert isinstance(result['SPECIAL_ASSESSMENT_MONTH'], int)
-
-
 def test_decode_all_non_int_params_are_floats():
     result = decode_state({k: '1.0' for k in PARAM_MAP.keys()})
     for short_key, const_name in PARAM_MAP.items():
@@ -126,18 +120,9 @@ def test_roundtrip_non_default_values():
     values = _miami_defaults()
     values['HOME_PRICE'] = 450_000.0
     values['MORTGAGE_RATE'] = 7.25
-    values['SPECIAL_ASSESSMENT_MONTH'] = 36
     decoded = decode_state(encode_state(values))
     assert abs(decoded['HOME_PRICE'] - 450_000.0) < 0.001
     assert abs(decoded['MORTGAGE_RATE'] - 7.25) < 0.001
-    assert decoded['SPECIAL_ASSESSMENT_MONTH'] == 36
-
-
-def test_roundtrip_zero_special_assessment():
-    values = _miami_defaults()
-    values['SPECIAL_ASSESSMENT_AMOUNT'] = 0.0
-    decoded = decode_state(encode_state(values))
-    assert decoded['SPECIAL_ASSESSMENT_AMOUNT'] == 0.0
 
 
 # ── NFR3: Performance < 100ms ─────────────────────────────────────────────────

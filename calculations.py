@@ -76,13 +76,6 @@ def calculate_investment_portfolio(initial_capital, monthly_contribution, annual
     return portfolio
 
 
-def get_special_assessment_for_month(amount, assessment_month, current_month):
-    """Returns special assessment cash outflow for current_month, else 0.0 (FR18)."""
-    if amount > 0 and current_month == assessment_month:
-        return float(amount)
-    return 0.0
-
-
 FL_DOC_STAMP_RATE = 0.007  # Florida documentary stamp tax (0.70% of sale price)
 
 

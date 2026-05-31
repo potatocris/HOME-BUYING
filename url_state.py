@@ -16,8 +16,6 @@ PARAM_MAP = {
     'apr':  'APPRECIATION_RATE',
     'cc':   'CLOSING_COST_PCT',
     'fur':  'FURNITURE_BUDGET',
-    'sa':   'SPECIAL_ASSESSMENT_AMOUNT',
-    'sam':  'SPECIAL_ASSESSMENT_MONTH',
     'ri':   'RENTAL_INCOME_MONTHLY',
     'vac':  'VACANCY_RATE',
     'mgmt': 'PROPERTY_MGMT_FEE_PCT',
@@ -26,7 +24,7 @@ PARAM_MAP = {
     'yr':   'HORIZON_YEARS',
 }
 
-INT_PARAMS = {'sam', 'yr'}
+INT_PARAMS = {'yr'}
 
 URL_MAX_QUERY_LENGTH = 2000
 

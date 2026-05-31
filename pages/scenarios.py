@@ -73,19 +73,6 @@ with st.sidebar:
 
     # ── Advanced Inputs ───────────────────────────────────────────────────────
     with st.expander("Advanced Inputs"):
-        st.caption("Special assessment: a one-time lump-sum cost (e.g. post-Surfside reserves)")
-        special_assessment_amount = st.slider(
-            "Special Assessment ($)",
-            min_value=0.0, max_value=100_000.0,
-            value=defaults.SPECIAL_ASSESSMENT_AMOUNT, step=500.0,
-            format="$%.0f",
-        )
-        special_assessment_month = st.slider(
-            "Assessment Month (1–60)",
-            min_value=1, max_value=60,
-            value=defaults.SPECIAL_ASSESSMENT_MONTH, step=1,
-        )
-
         st.caption("Landlord scenario: used in the Rent Out exit path calculation")
         rental_income_monthly = st.slider(
             "Rental Income (monthly)",
@@ -132,22 +119,18 @@ for down_pct in DOWN_PAYMENT_SCENARIOS:
     hoa_m1       = hoa_monthly
     tax_m1       = calculations.calculate_monthly_property_tax(home_price, property_tax_rate, 1)
     insurance_m1 = ho6_insurance_annual / 12
-    special_m1   = calculations.get_special_assessment_for_month(
-                       special_assessment_amount, special_assessment_month, 1)
-    total_m1     = p_and_i_m1 + pmi_m1 + hoa_m1 + tax_m1 + insurance_m1 + special_m1
-    recurring_m1 = total_m1 - special_m1
+    total_m1     = p_and_i_m1 + pmi_m1 + hoa_m1 + tax_m1 + insurance_m1
 
     monthly_cost_m1 = {
-        "p_and_i":            p_and_i_m1,
-        "pmi":                pmi_m1,
-        "hoa":                hoa_m1,
-        "property_tax":       tax_m1,
-        "insurance":          insurance_m1,
-        "special_assessment": special_m1,
-        "total":              total_m1,
+        "p_and_i":      p_and_i_m1,
+        "pmi":          pmi_m1,
+        "hoa":          hoa_m1,
+        "property_tax": tax_m1,
+        "insurance":    insurance_m1,
+        "total":        total_m1,
     }
 
-    monthly_contribution = max(0.0, recurring_m1 - market_rent)
+    monthly_contribution = max(0.0, total_m1 - market_rent)
     portfolio_values     = calculations.calculate_investment_portfolio(
         initial_capital=upfront_cash,
         monthly_contribution=monthly_contribution,
@@ -205,15 +188,6 @@ for col, sc in zip(cols, scenarios):
     mc = sc["monthly_cost_m1"]
     recurring_total = mc["p_and_i"] + mc["pmi"] + mc["hoa"] + mc["property_tax"] + mc["insurance"]
 
-    special_note = ""
-    if mc["special_assessment"] > 0:
-        special_note = (
-            f"<div style='font-size:0.8rem;color:#555;margin-top:6px'>"
-            f"+ {_fmt(mc['special_assessment'])} one-time assessment"
-            f" (month&nbsp;{special_assessment_month})"
-            f"</div>"
-        )
-
     card_html = f"""
 <div aria-label="{sc['down_pct']}% down payment scenario"
      style="background:#F5F7FA;border:1px solid #D1D9E6;border-radius:8px;padding:16px;color:#1A1A1A">
@@ -230,7 +204,6 @@ for col, sc in zip(cols, scenarios):
       <td>Total</td><td style="text-align:right">{_fmt(recurring_total)}</td>
     </tr>
   </table>
-  {special_note}
 </div>
 """
     col.markdown(card_html, unsafe_allow_html=True)

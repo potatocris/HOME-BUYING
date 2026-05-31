@@ -114,19 +114,6 @@ with st.sidebar:
 
     # ── Advanced Inputs ───────────────────────────────────────────────────────
     with st.expander("Advanced Inputs"):
-        st.caption("Special assessment: a one-time lump-sum cost (e.g. post-Surfside reserves)")
-        special_assessment_amount = st.slider(
-            "Special Assessment ($)",
-            min_value=0.0, max_value=100_000.0,
-            value=_initial['SPECIAL_ASSESSMENT_AMOUNT'], step=500.0,
-            format="$%.0f",
-        )
-        special_assessment_month = st.slider(
-            "Assessment Month (1–60)",
-            min_value=1, max_value=60,
-            value=_initial['SPECIAL_ASSESSMENT_MONTH'], step=1,
-        )
-
         st.caption("Landlord scenario: used in the Rent Out exit path calculation")
         rental_income_monthly = st.slider(
             "Rental Income (monthly)",
@@ -169,8 +156,6 @@ st.query_params.update(url_state.encode_state({
     'INVESTMENT_RETURN_RATE':    investment_return_rate,
     'CLOSING_COST_PCT':          closing_cost_pct,
     'FURNITURE_BUDGET':          furniture_budget,
-    'SPECIAL_ASSESSMENT_AMOUNT': special_assessment_amount,
-    'SPECIAL_ASSESSMENT_MONTH':  special_assessment_month,
     'RENTAL_INCOME_MONTHLY':     rental_income_monthly,
     'VACANCY_RATE':              vacancy_rate,
     'PROPERTY_MGMT_FEE_PCT':     property_mgmt_fee_pct,
@@ -178,148 +163,159 @@ st.query_params.update(url_state.encode_state({
 }))
 
 # ── Rent vs Buy Two-Path Calculation ──────────────────────────────────────────
-total_months  = horizon_years * 12
+_calc_error = False
+try:
+    total_months  = horizon_years * 12
 
-schedule     = calculations.calculate_amortization_schedule(
-    home_price, down_pct, mortgage_rate, months=total_months
-)
-upfront_cash = calculations.calculate_upfront_cash(
-    home_price, down_pct, closing_cost_pct, furniture_budget
-)
-monthly_rate = investment_return_rate / 100 / 12
+    schedule     = calculations.calculate_amortization_schedule(
+        home_price, down_pct, mortgage_rate, months=total_months
+    )
+    upfront_cash = calculations.calculate_upfront_cash(
+        home_price, down_pct, closing_cost_pct, furniture_budget
+    )
+    monthly_rate = investment_return_rate / 100 / 12
 
-# Pass 1: renter portfolio (variable contributions) + buyer surplus list
-renter_balance     = upfront_cash
-renter_monthly     = []
-buyer_surplus_list = []
+    # Pass 1: renter portfolio (variable contributions) + buyer surplus list
+    renter_balance     = upfront_cash
+    renter_monthly     = []
+    buyer_surplus_list = []
 
-for month_idx, rec in enumerate(schedule):
-    m        = month_idx + 1
-    p_and_i  = rec["interest"] + rec["principal"]
-    pmi_m    = rec["pmi"]
-    tax_m    = calculations.calculate_monthly_property_tax(home_price, property_tax_rate, m)
-    ins_m    = ho6_insurance_annual / 12
-    buying_cost_m = p_and_i + pmi_m + hoa_monthly + tax_m + ins_m
+    for month_idx, rec in enumerate(schedule):
+        m        = month_idx + 1
+        p_and_i  = rec["interest"] + rec["principal"]
+        pmi_m    = rec["pmi"]
+        tax_m    = calculations.calculate_monthly_property_tax(home_price, property_tax_rate, m)
+        ins_m    = ho6_insurance_annual / 12
+        buying_cost_m = p_and_i + pmi_m + hoa_monthly + tax_m + ins_m
 
-    renter_contribution = max(0.0, buying_cost_m - market_rent)
-    renter_balance      = (renter_balance + renter_contribution) * (1 + monthly_rate)
-    renter_monthly.append(renter_balance)
+        renter_contribution = max(0.0, buying_cost_m - market_rent)
+        renter_balance      = (renter_balance + renter_contribution) * (1 + monthly_rate)
+        renter_monthly.append(renter_balance)
 
-    buyer_surplus_list.append(max(0.0, market_rent - buying_cost_m))
+        buyer_surplus_list.append(max(0.0, market_rent - buying_cost_m))
 
-# Buyer side portfolio: $0 start, grows from monthly surpluses
-buyer_portfolio = calculations.calculate_buyer_investment_portfolio(
-    buyer_surplus_list, investment_return_rate
-)
-
-# Pass 2: buyer total wealth = home equity + side portfolio
-buyer_monthly = []
-for month_idx, rec in enumerate(schedule):
-    m                   = month_idx + 1
-    appreciated_value_m = home_price * (1 + appreciation_rate / 100) ** (m / 12)
-    home_equity_m       = appreciated_value_m - rec["balance"]
-    buyer_monthly.append(home_equity_m + buyer_portfolio[month_idx])
-
-# Annual snapshots for chart (Story 2.7) and table (Story 2.8)
-renter_annual = calculations.get_annual_snapshots(renter_monthly)
-buyer_annual  = calculations.get_annual_snapshots(buyer_monthly)
-
-# ── Break-even detection ───────────────────────────────────────────────────────
-break_even_year = None
-if len(renter_annual) >= 2:
-    prev_renting_ahead = renter_annual[0] >= buyer_annual[0]
-    for i in range(1, len(renter_annual)):
-        curr_renting_ahead = renter_annual[i] >= buyer_annual[i]
-        if curr_renting_ahead != prev_renting_ahead:
-            break_even_year = i + 1  # 1-indexed: renter_annual[0] = year 1
-            break
-        prev_renting_ahead = curr_renting_ahead
-
-if break_even_year is not None:
-    break_even_text = f"Break-even at year {break_even_year}"
-else:
-    break_even_text = f"No break-even within {horizon_years} year{'s' if horizon_years != 1 else ''}"
-
-# ── Main area ─────────────────────────────────────────────────────────────────
-final_renter = renter_annual[-1]
-final_buyer  = buyer_annual[-1]
-if final_renter >= final_buyer:
-    winner     = "Renting"
-    difference = final_renter - final_buyer
-else:
-    winner     = "Buying"
-    difference = final_buyer - final_renter
-
-st.title("Miami Home Buying Decision Tool")
-st.markdown(_headline_card(winner, difference, horizon_years, break_even_text), unsafe_allow_html=True)
-# ── Wealth over time chart ─────────────────────────────────────────────────────
-x_vals        = list(range(horizon_years + 1))
-renter_series = [upfront_cash] + renter_annual
-buyer_series  = [0.0] + buyer_annual
-
-fig = go.Figure()
-fig.add_trace(go.Scatter(
-    x=x_vals, y=renter_series,
-    name="Rent + Invest",
-    mode="lines+markers",
-    line=dict(color="#2B6CB0", width=2),
-    marker=dict(size=5),
-))
-fig.add_trace(go.Scatter(
-    x=x_vals, y=buyer_series,
-    name="Buy + Invest",
-    mode="lines+markers",
-    line=dict(color="#ED8936", width=2),
-    marker=dict(size=5),
-))
-
-if break_even_year is not None:
-    fig.add_vline(
-        x=break_even_year,
-        line_dash="dash",
-        line_color="#A0AEC0",
-        annotation_text=f"Break-even: year {break_even_year}",
-        annotation_position="top",
+    # Buyer side portfolio: $0 start, grows from monthly surpluses
+    buyer_portfolio = calculations.calculate_buyer_investment_portfolio(
+        buyer_surplus_list, investment_return_rate
     )
 
-fig.update_layout(
-    template="simple_white",
-    title=dict(text="Total Wealth Over Time", font=dict(color="#1A1D2E", size=16)),
-    xaxis=dict(
-        title=dict(text="Year", font=dict(color="#1A1D2E")),
-        tickfont=dict(color="#1A1D2E"),
-        tickmode="linear", dtick=5, tick0=0,
-        gridcolor="#E2E8F0", showgrid=True,
-    ),
-    yaxis=dict(
-        title=dict(text="Total Net Wealth", font=dict(color="#1A1D2E")),
-        tickfont=dict(color="#1A1D2E"),
-        tickprefix="$", tickformat=",",
-        gridcolor="#E2E8F0", showgrid=True,
-    ),
-    legend=dict(
+    # Pass 2: buyer total wealth = home equity + side portfolio
+    buyer_monthly = []
+    for month_idx, rec in enumerate(schedule):
+        m                   = month_idx + 1
+        appreciated_value_m = home_price * (1 + appreciation_rate / 100) ** (m / 12)
+        home_equity_m       = appreciated_value_m - rec["balance"]
+        buyer_monthly.append(home_equity_m + buyer_portfolio[month_idx])
+
+    # Annual snapshots for chart (Story 2.7) and table (Story 2.8)
+    renter_annual = calculations.get_annual_snapshots(renter_monthly)
+    buyer_annual  = calculations.get_annual_snapshots(buyer_monthly)
+
+except Exception:
+    _calc_error = True
+
+st.title("Miami Home Buying Decision Tool")
+
+if _calc_error:
+    st.error("Unable to calculate — please check your inputs.")
+else:
+    # ── Break-even detection ───────────────────────────────────────────────────
+    break_even_year = None
+    if len(renter_annual) >= 2:
+        prev_renting_ahead = renter_annual[0] >= buyer_annual[0]
+        for i in range(1, len(renter_annual)):
+            curr_renting_ahead = renter_annual[i] >= buyer_annual[i]
+            if curr_renting_ahead != prev_renting_ahead:
+                break_even_year = i + 1  # 1-indexed: renter_annual[0] = year 1
+                break
+            prev_renting_ahead = curr_renting_ahead
+
+    if break_even_year is not None:
+        break_even_text = f"Break-even at year {break_even_year}"
+    else:
+        break_even_text = f"No break-even within {horizon_years} year{'s' if horizon_years != 1 else ''}"
+
+    # ── Main area ─────────────────────────────────────────────────────────────
+    final_renter = renter_annual[-1]
+    final_buyer  = buyer_annual[-1]
+    if final_renter >= final_buyer:
+        winner     = "Renting"
+        difference = final_renter - final_buyer
+    else:
+        winner     = "Buying"
+        difference = final_buyer - final_renter
+
+    st.markdown(_headline_card(winner, difference, horizon_years, break_even_text), unsafe_allow_html=True)
+
+    # ── Wealth over time chart ─────────────────────────────────────────────────
+    x_vals        = list(range(horizon_years + 1))
+    renter_series = [upfront_cash] + renter_annual
+    buyer_series  = [0.0] + buyer_annual
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=x_vals, y=renter_series,
+        name="Rent + Invest",
+        mode="lines+markers",
+        line=dict(color="#2B6CB0", width=2),
+        marker=dict(size=5),
+    ))
+    fig.add_trace(go.Scatter(
+        x=x_vals, y=buyer_series,
+        name="Buy + Invest",
+        mode="lines+markers",
+        line=dict(color="#ED8936", width=2),
+        marker=dict(size=5),
+    ))
+
+    if break_even_year is not None:
+        fig.add_vline(
+            x=break_even_year,
+            line_dash="dash",
+            line_color="#A0AEC0",
+            annotation_text=f"Break-even: year {break_even_year}",
+            annotation_position="top",
+        )
+
+    fig.update_layout(
+        template="simple_white",
+        title=dict(text="Total Wealth Over Time", font=dict(color="#1A1D2E", size=16)),
+        xaxis=dict(
+            title=dict(text="Year", font=dict(color="#1A1D2E")),
+            tickfont=dict(color="#1A1D2E"),
+            tickmode="linear", dtick=5, tick0=0,
+            gridcolor="#E2E8F0", showgrid=True,
+        ),
+        yaxis=dict(
+            title=dict(text="Total Net Wealth", font=dict(color="#1A1D2E")),
+            tickfont=dict(color="#1A1D2E"),
+            tickprefix="$", tickformat=",",
+            gridcolor="#E2E8F0", showgrid=True,
+        ),
+        legend=dict(
+            font=dict(color="#1A1D2E"),
+            orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+        ),
+        plot_bgcolor="#FFFFFF",
+        paper_bgcolor="#FFFFFF",
+        margin=dict(l=0, r=0, t=60, b=0),
+        hovermode="x unified",
         font=dict(color="#1A1D2E"),
-        orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
-    ),
-    plot_bgcolor="#FFFFFF",
-    paper_bgcolor="#FFFFFF",
-    margin=dict(l=0, r=0, t=60, b=0),
-    hovermode="x unified",
-    font=dict(color="#1A1D2E"),
-)
+    )
 
-st.plotly_chart(fig, use_container_width=True)
-# ── Annual wealth breakdown table ─────────────────────────────────────────────
-table_rows = []
-for i, (r, b) in enumerate(zip(renter_annual, buyer_annual)):
-    diff = r - b
-    table_rows.append({
-        "Year": i + 1,
-        "Rent + Invest": _fmt_dollar(r),
-        "Buy + Invest": _fmt_dollar(b),
-        "Difference": _fmt_dollar(diff),
-        "Better": "Renting" if r >= b else "Buying",
-    })
+    st.plotly_chart(fig, use_container_width=True)
 
-st.subheader("Annual Wealth Breakdown")
-st.dataframe(pd.DataFrame(table_rows), hide_index=True, use_container_width=True)
+    # ── Annual wealth breakdown table ─────────────────────────────────────────
+    table_rows = []
+    for i, (r, b) in enumerate(zip(renter_annual, buyer_annual)):
+        diff = r - b
+        table_rows.append({
+            "Year": i + 1,
+            "Rent + Invest": _fmt_dollar(r),
+            "Buy + Invest": _fmt_dollar(b),
+            "Difference": _fmt_dollar(diff),
+            "Better": "Renting" if r >= b else "Buying",
+        })
+
+    st.subheader("Annual Wealth Breakdown")
+    st.dataframe(pd.DataFrame(table_rows), hide_index=True, use_container_width=True)
