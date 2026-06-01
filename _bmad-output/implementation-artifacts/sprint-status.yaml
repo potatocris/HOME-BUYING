@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-22
-last_updated: 2026-05-31  # epic-2 done
+last_updated: 2026-06-01  # story 3.5 ready-for-dev
 project: Miami Home Buying Decision Tool
 project_key: NOKEY
 tracking_system: file-system
@@ -82,12 +82,12 @@ development_status:
   # ─────────────────────────────────────────────────────────────
   # Epic 3: Trust, Transparency & UX Polish
   # ─────────────────────────────────────────────────────────────
-  epic-3: backlog
-  3-1-streamlit-theme-global-styles: backlog
-  3-2-disclaimerbanner-component: backlog
-  3-3-sidebar-ux-polish-grouping-labels-caption: backlog  # minor: add timeline slider grouping
-  3-4-headlinecard-component: backlog                     # updated: rent vs buy verdict at selected horizon
-  3-5-chart-and-table-polish: backlog                     # REVISED from scenariocolumn-x4: line chart styling + annual table formatting
+  epic-3: in-progress
+  3-1-streamlit-theme-global-styles: done
+  3-2-disclaimerbanner-component: done
+  3-3-sidebar-ux-polish-grouping-labels-caption: done  # minor: add timeline slider grouping
+  3-4-headlinecard-component: done                              # updated: note line "At X% down · break-even text"
+  3-5-chart-and-table-polish: ready-for-dev               # REVISED from scenariocolumn-x4: line chart styling + annual table formatting
   3-6-page2-scenario-comparison-polish: backlog           # REVISED from exitpathstable: 4-scenario page polish (deferred, low priority)
   3-7-number-formatting-outcome-neutrality-enforcement: backlog
   3-8-accessibility-attributes: backlog
