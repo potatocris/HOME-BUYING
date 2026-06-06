@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-22
-last_updated: 2026-06-01  # story 3.5 ready-for-dev
+last_updated: 2026-06-06  # story 3.5 done (code review passed)
 project: Miami Home Buying Decision Tool
 project_key: NOKEY
 tracking_system: file-system
@@ -87,7 +87,7 @@ development_status:
   3-2-disclaimerbanner-component: done
   3-3-sidebar-ux-polish-grouping-labels-caption: done  # minor: add timeline slider grouping
   3-4-headlinecard-component: done                              # updated: note line "At X% down · break-even text"
-  3-5-chart-and-table-polish: ready-for-dev               # REVISED from scenariocolumn-x4: line chart styling + annual table formatting
+  3-5-chart-and-table-polish: done                         # REVISED from scenariocolumn-x4: line chart styling + annual table formatting
   3-6-page2-scenario-comparison-polish: backlog           # REVISED from exitpathstable: 4-scenario page polish (deferred, low priority)
   3-7-number-formatting-outcome-neutrality-enforcement: backlog
   3-8-accessibility-attributes: backlog

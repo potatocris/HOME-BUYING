@@ -1,6 +1,6 @@
 # Story 3.5: Chart & Table Polish
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -18,27 +18,27 @@ so that the main-page outputs feel polished, readable, and consistent with the U
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Add hovertemplate to both chart traces (AC: 1)**
-  - [ ] In the `fig.add_trace(go.Scatter(...))` call for "Rent + Invest" (line ~289): add `hovertemplate="$%{y:,.0f}<extra></extra>"`
-  - [ ] In the `fig.add_trace(go.Scatter(...))` call for "Buy + Invest" (line ~296): add `hovertemplate="$%{y:,.0f}<extra></extra>"`
+- [x] **Task 1: Add hovertemplate to both chart traces (AC: 1)**
+  - [x] In the `fig.add_trace(go.Scatter(...))` call for "Rent + Invest" (line ~289): add `hovertemplate="$%{y:,.0f}<extra></extra>"`
+  - [x] In the `fig.add_trace(go.Scatter(...))` call for "Buy + Invest" (line ~296): add `hovertemplate="$%{y:,.0f}<extra></extra>"`
 
-- [ ] **Task 2: Style the break-even annotation (AC: 2)**
-  - [ ] In the `fig.add_vline(...)` call (line ~304): add `annotation_font=dict(color="#1A1D2E", size=12)` as a new keyword argument
+- [x] **Task 2: Style the break-even annotation (AC: 2)**
+  - [x] In the `fig.add_vline(...)` call (line ~304): add `annotation_font=dict(color="#1A1D2E", size=12)` as a new keyword argument
 
-- [ ] **Task 3: Apply pandas Styler to the "Better" column (AC: 3)**
-  - [ ] Before `st.subheader("Annual Wealth Breakdown")`, build `df = pd.DataFrame(table_rows)`
-  - [ ] Apply Styler: map "Renting" → `color: #2B6CB0; font-weight: 600` and "Buying" → `color: #6B46C1; font-weight: 600` on the "Better" subset (see exact code in Dev Notes)
-  - [ ] Pass `styled` (not `df`) to `st.dataframe`
+- [x] **Task 3: Apply pandas Styler to the "Better" column (AC: 3)**
+  - [x] Before `st.subheader("Annual Wealth Breakdown")`, build `df = pd.DataFrame(table_rows)`
+  - [x] Apply Styler: map "Renting" → `color: #2B6CB0; font-weight: 600` and "Buying" → `color: #6B46C1; font-weight: 600` on the "Better" subset (see exact code in Dev Notes)
+  - [x] Pass `styled` (not `df`) to `st.dataframe`
 
-- [ ] **Task 4: Add column_config for "Year" column (AC: 4)**
-  - [ ] Add `column_config={"Year": st.column_config.NumberColumn("Year", format="%d", width="small")}` to the `st.dataframe` call
+- [x] **Task 4: Add column_config for "Year" column (AC: 4)**
+  - [x] Add `column_config={"Year": st.column_config.NumberColumn("Year", format="%d", width="small")}` to the `st.dataframe` call
 
-- [ ] **Task 5: Regression check (AC: 5)**
-  - [ ] Run `python -m pytest tests/ -v` — all 94 tests pass (0 regressions)
-  - [ ] Verify `calculations.py`, `url_state.py`, `tests/`, `defaults.py` are untouched
+- [x] **Task 5: Regression check (AC: 5)**
+  - [x] Run `python -m pytest tests/ -v` — all 94 tests pass (0 regressions)
+  - [x] Verify `calculations.py`, `url_state.py`, `tests/`, `defaults.py` are untouched
 
-- [ ] **Task 6: Syntax and smoke check**
-  - [ ] AST parse clean: `python -c "import ast; ast.parse(open('app.py').read()); print('OK')"`
+- [x] **Task 6: Syntax and smoke check**
+  - [x] AST parse clean: `python -c "import ast; ast.parse(open('app.py').read()); print('OK')"` — PASSED
   - [ ] Manual smoke: `streamlit run app.py` — hover over chart shows `$X,XXX` format; "Better" column shows "Renting" in blue and "Buying" in purple; Year column shows integers
   - [ ] Hover check: drag horizon to 30yr; hover any year-end point — confirm formatted dollar value
   - [ ] Annotation check: set investment return to 0% (forces buying to win eventually) — confirm break-even annotation appears with dark text
@@ -258,9 +258,33 @@ Validation gates:
 ## Dev Agent Record
 
 ### Agent Model Used
+claude-sonnet-4-6
 
 ### Debug Log References
+None — all 4 tasks applied cleanly on first attempt.
 
 ### Completion Notes List
+- Task 1: Added `hovertemplate="$%{y:,.0f}<extra></extra>"` to both Scatter traces. Suppresses redundant trace-name box via `<extra></extra>`.
+- Task 2: Added `annotation_font=dict(color="#1A1D2E", size=12)` to `fig.add_vline()`. Plotly 6.7.0 supports this natively.
+- Task 3: Added `_BETTER_COLORS` module-level dict after `_fmt_dollar`. Used `df.style.map` (not deprecated `applymap`) targeting `subset=["Better"]`.
+- Task 4: Added `column_config={"Year": st.column_config.NumberColumn("Year", format="%d", width="small")}` to `st.dataframe`. Composes correctly with Styler object.
+- Task 5: 94/94 tests pass. `calculations.py`, `url_state.py`, `tests/`, `defaults.py` untouched.
+- Task 6: AST parse clean. Manual smoke check pending user.
 
 ### File List
+- app.py
+
+## Change Log
+- 2026-06-01: Implemented chart & table polish — hovertemplate on both traces, annotation_font on break-even vline, pandas Styler on "Better" column, NumberColumn config for Year. 94/94 tests pass, AST clean. (claude-sonnet-4-6)
+
+## Review Findings (2026-06-06)
+
+All 5 acceptance criteria PASS; 94/94 tests pass; no do-not-touch source files modified.
+
+- [x] [Review][Decision] RESOLVED → recolor chart line. "Buying" table color did not match its chart line — table "Buying" purple `#6B46C1` vs Buy + Invest line orange `#ED8936`. Decision: recolored the Buy + Invest chart line to `#6B46C1` so chart and table both use purple (applied as patch).
+- [x] [Review][Decision] RESOLVED → one bundled commit. Uncommitted working tree bundles stories 3.2–3.4 into the same `app.py` as 3.5. Decision: commit 3.2–3.5 together as a single bundled commit with a message noting all four stories.
+- [x] [Review][Patch] APPLIED — Negative hover values rendered as `$-3,200`; changed `hovertemplate` from `"$%{y:,.0f}"` to `"%{y:$,.0f}"` on both traces so negatives render `-$3,200` while positives stay `$240,604`. [app.py:301,309]
+- [x] [Review][Patch] APPLIED — Recolored Buy + Invest chart line `#ED8936` → `#6B46C1` to match the table "Buying" color. [app.py:307]
+- [x] [Review][Defer] Styler `subset=["Better"]` would raise `KeyError` on a zero-column DataFrame [app.py:~362] — deferred, unreachable today (horizon `select_slider` floor of 5 yr guarantees ≥5 rows; latent only if the floor drops below 12 months).
+- [x] [Review][Defer] `_has_url_params` suppresses the "Miami defaults loaded" caption even when URL params are all invalid and defaults were effectively applied [app.py:~58] — deferred, pre-existing 3.3 carryover, cosmetic.
+- [x] [Review][Defer] `__pycache__/*.pyc` bytecode is tracked in git and shows up in every diff — deferred, repo hygiene; should be gitignored.

@@ -1,5 +1,11 @@
 # Deferred Work Log
 
+## Deferred from: code review of 3-5-chart-and-table-polish (2026-06-06)
+
+- **Styler `subset=["Better"]` would raise `KeyError` on a zero-column DataFrame** (`app.py` annual table block): `df.style.map(..., subset=["Better"])` assumes the "Better" column exists. Unreachable today — the horizon `select_slider` floor of 5 years guarantees ≥5 table rows — but latent if the minimum horizon is ever lowered below 12 months.
+- **`_has_url_params` suppresses the "Miami defaults loaded" caption even when URL params are all invalid** (`app.py:~58`): `bool(st.query_params.to_dict())` is `True` for any params, including garbage/out-of-range ones that fall back to Miami defaults. The caption is then hidden even though defaults were effectively applied. Cosmetic, 3.3 carryover.
+- **`__pycache__/*.pyc` bytecode is tracked in git** and appears in every diff. Should be added to `.gitignore` and untracked. Repo hygiene.
+
 ## Deferred from: code review of 1-1-project-scaffold-module-structure (2026-05-22)
 
 - **No python_requires or minimum Python version constraint documented.** No setup.cfg, pyproject.toml, or .python-version file exists. Compiled wheels (numpy, pyarrow, pillow) are Python-minor-version specific — a developer on a different minor version will get cryptic errors.

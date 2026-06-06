@@ -6,7 +6,7 @@ import pandas as pd
 import url_state
 
 
-def _headline_card(winner: str, difference: float, horizon_years: int, break_even_text: str) -> str:
+def _headline_card(winner: str, difference: float, horizon_years: int, down_pct: float, break_even_text: str) -> str:
     return f"""
 <div aria-label="Financial comparison headline"
      style="background:#F5F7FA; padding:1.5rem 2rem; border-radius:8px; margin-bottom:1.5rem;">
@@ -17,7 +17,7 @@ def _headline_card(winner: str, difference: float, horizon_years: int, break_eve
   <p style="color:#1A1D2E; font-size:1.1rem; font-weight:400; margin:0 0 0.5rem 0;">
     {winner} is better by ${difference:,.0f} over {horizon_years} year{"s" if horizon_years != 1 else ""}
   </p>
-  <p style="color:#1A1D2E; font-size:0.875rem; margin:0; opacity:0.75;">{break_even_text}</p>
+  <p style="color:#1A1D2E; font-size:0.875rem; margin:0; opacity:0.75;">At {down_pct:.0f}% down · {break_even_text}</p>
 </div>
 """
 
@@ -28,17 +28,40 @@ def _fmt_dollar(v: float) -> str:
     return f"${v:,.0f}"
 
 
+_BETTER_COLORS = {
+    "Renting": "color: #2B6CB0; font-weight: 600",
+    "Buying":  "color: #6B46C1; font-weight: 600",
+}
+
+
+def _disclaimer_banner(last_updated: str) -> str:
+    return f"""
+<div aria-label="Disclaimer and defaults information"
+     style="background:#EBF4FF; padding:0.5rem 1rem; border-radius:4px; margin-bottom:1rem;
+            display:flex; justify-content:space-between; align-items:center;">
+  <span style="color:#2B6CB0; font-size:0.75rem;">
+    Financial calculator only. No lender affiliation. Not financial advice.
+  </span>
+  <span style="color:#2B6CB0; font-size:0.75rem;">
+    Defaults last updated: {last_updated}
+  </span>
+</div>
+"""
+
+
 st.set_page_config(page_title="Miami Home Buying Decision Tool", layout="wide")
 
 # ── Sidebar: all 18 input sliders ─────────────────────────────────────────────
 _initial = url_state.decode_state(st.query_params.to_dict())
 if _initial['HORIZON_YEARS'] not in [5, 10, 15, 20, 25, 30]:
     _initial['HORIZON_YEARS'] = defaults.HORIZON_YEARS
+_has_url_params = bool(st.query_params.to_dict())
 
 with st.sidebar:
     # ── Essential Inputs ──────────────────────────────────────────────────────
     st.subheader("Essential Inputs")
-    st.caption("Miami defaults loaded")
+    if not _has_url_params:
+        st.caption("Miami defaults loaded")
 
     home_price = st.slider(
         "Home Price",
@@ -63,6 +86,9 @@ with st.sidebar:
         value=_initial['MORTGAGE_RATE'], step=0.125,
         format="%.3f%%",
     )
+    _lo, _hi = st.columns(2)
+    _lo.caption("3.00%")
+    _hi.markdown('<p style="text-align:right;font-size:0.75rem;color:#718096;margin:0;padding:0">12.00%</p>', unsafe_allow_html=True)
     hoa_monthly = st.slider(
         "HOA (monthly)",
         min_value=0.0, max_value=2_500.0,
@@ -81,6 +107,9 @@ with st.sidebar:
         value=_initial['PROPERTY_TAX_RATE'], step=0.05,
         format="%.2f%%",
     )
+    _lo, _hi = st.columns(2)
+    _lo.caption("0.50%")
+    _hi.markdown('<p style="text-align:right;font-size:0.75rem;color:#718096;margin:0;padding:0">3.00%</p>', unsafe_allow_html=True)
     market_rent = st.slider(
         "Market Rent (monthly)",
         min_value=500.0, max_value=6_000.0,
@@ -93,18 +122,27 @@ with st.sidebar:
         value=_initial['APPRECIATION_RATE'], step=0.25,
         format="%.2f%%",
     )
+    _lo, _hi = st.columns(2)
+    _lo.caption("0.00%")
+    _hi.markdown('<p style="text-align:right;font-size:0.75rem;color:#718096;margin:0;padding:0">10.00%</p>', unsafe_allow_html=True)
     investment_return_rate = st.slider(
         "Investment Return (%/yr)",
         min_value=0.0, max_value=15.0,
         value=_initial['INVESTMENT_RETURN_RATE'], step=0.25,
         format="%.2f%%",
     )
+    _lo, _hi = st.columns(2)
+    _lo.caption("0.00%")
+    _hi.markdown('<p style="text-align:right;font-size:0.75rem;color:#718096;margin:0;padding:0">15.00%</p>', unsafe_allow_html=True)
     closing_cost_pct = st.slider(
         "Closing Costs (%)",
         min_value=1.0, max_value=6.0,
         value=_initial['CLOSING_COST_PCT'], step=0.25,
         format="%.2f%%",
     )
+    _lo, _hi = st.columns(2)
+    _lo.caption("1.00%")
+    _hi.markdown('<p style="text-align:right;font-size:0.75rem;color:#718096;margin:0;padding:0">6.00%</p>', unsafe_allow_html=True)
     furniture_budget = st.slider(
         "Furniture & Improvements",
         min_value=0.0, max_value=50_000.0,
@@ -214,6 +252,7 @@ try:
 except Exception:
     _calc_error = True
 
+st.markdown(_disclaimer_banner(defaults.DEFAULTS_LAST_UPDATED), unsafe_allow_html=True)
 st.title("Miami Home Buying Decision Tool")
 
 if _calc_error:
@@ -245,7 +284,7 @@ else:
         winner     = "Buying"
         difference = final_buyer - final_renter
 
-    st.markdown(_headline_card(winner, difference, horizon_years, break_even_text), unsafe_allow_html=True)
+    st.markdown(_headline_card(winner, difference, horizon_years, down_pct, break_even_text), unsafe_allow_html=True)
 
     # ── Wealth over time chart ─────────────────────────────────────────────────
     x_vals        = list(range(horizon_years + 1))
@@ -259,13 +298,15 @@ else:
         mode="lines+markers",
         line=dict(color="#2B6CB0", width=2),
         marker=dict(size=5),
+        hovertemplate="%{y:$,.0f}<extra></extra>",
     ))
     fig.add_trace(go.Scatter(
         x=x_vals, y=buyer_series,
         name="Buy + Invest",
         mode="lines+markers",
-        line=dict(color="#ED8936", width=2),
+        line=dict(color="#6B46C1", width=2),
         marker=dict(size=5),
+        hovertemplate="%{y:$,.0f}<extra></extra>",
     ))
 
     if break_even_year is not None:
@@ -275,6 +316,7 @@ else:
             line_color="#A0AEC0",
             annotation_text=f"Break-even: year {break_even_year}",
             annotation_position="top",
+            annotation_font=dict(color="#1A1D2E", size=12),
         )
 
     fig.update_layout(
@@ -318,4 +360,13 @@ else:
         })
 
     st.subheader("Annual Wealth Breakdown")
-    st.dataframe(pd.DataFrame(table_rows), hide_index=True, use_container_width=True)
+    df = pd.DataFrame(table_rows)
+    styled = df.style.map(lambda v: _BETTER_COLORS.get(v, ""), subset=["Better"])
+    st.dataframe(
+        styled,
+        hide_index=True,
+        use_container_width=True,
+        column_config={
+            "Year": st.column_config.NumberColumn("Year", format="%d", width="small"),
+        },
+    )
