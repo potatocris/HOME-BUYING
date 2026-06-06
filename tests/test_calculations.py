@@ -9,6 +9,7 @@ from calculations import (
     calculate_exit_continue_renting,
     calculate_buyer_investment_portfolio,
     get_annual_snapshots,
+    escalated_rent,
 )
 
 
@@ -519,3 +520,27 @@ def test_annual_snapshots_partial_year_ignored():
     values = list(range(1, 66))
     result = get_annual_snapshots(values)
     assert len(result) == 5
+
+
+# ── escalated_rent ───────────────────────────────────────────────────────────
+
+def test_escalated_rent_year_one_is_flat():
+    # Months 1-12 (year 1) all equal the base rent — no increase yet
+    for m in range(1, 13):
+        assert escalated_rent(2_000.0, 3.0, m) == 2_000.0
+
+
+def test_escalated_rent_year_two_step():
+    # Month 13 starts year 2 → one annual increase applied
+    assert abs(escalated_rent(2_000.0, 3.0, 13) - 2_060.0) < 0.001
+    assert abs(escalated_rent(2_000.0, 3.0, 24) - 2_060.0) < 0.001  # still year 2
+
+
+def test_escalated_rent_zero_growth_never_changes():
+    assert escalated_rent(2_000.0, 0.0, 1) == 2_000.0
+    assert escalated_rent(2_000.0, 0.0, 120) == 2_000.0
+
+
+def test_escalated_rent_compounds_annually():
+    # Year 3 (month 25) → base * 1.03^2
+    assert abs(escalated_rent(2_000.0, 3.0, 25) - 2_000.0 * 1.03 ** 2) < 0.001

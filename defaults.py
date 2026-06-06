@@ -19,6 +19,7 @@ CLOSING_COST_PCT = 3.5        # FL avg: title, recording, lender fees (% of pric
 
 # -- Renting / Opportunity Cost ------------------------------------------------
 MARKET_RENT = 2_000.0         # Comparable Miami unit monthly rent ($/month)
+RENT_GROWTH_RATE = 3.0        # Assumed annual rent increase (% per year)
 INVESTMENT_RETURN_RATE = 7.0  # Long-run stock market return assumption (% per year)
 
 # -- Upfront Costs -------------------------------------------------------------

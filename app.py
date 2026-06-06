@@ -25,6 +25,41 @@ def _headline_card(winner: str, difference: float, horizon_years: int, down_pct:
 """
 
 
+def _renting_card(starting_rent: float, total_rent: float, growth_pct: float, horizon_years: int) -> str:
+    yrs = f"{horizon_years} year{'s' if horizon_years != 1 else ''}"
+    return f"""
+<div aria-label="Renting summary"
+     style="background:#F5F7FA; padding:1.5rem; border-radius:8px; height:100%; color:#1A1D2E;">
+  <p style="color:#1A1D2E; font-size:1.05rem; font-weight:600; margin:0 0 0.5rem 0;">Renting</p>
+  <p style="color:#1A1D2E; font-size:1.4rem; font-weight:700; margin:0;">{formatting.fmt_dollar(starting_rent)}<span style="font-size:0.82rem; font-weight:400">&thinsp;/mo</span></p>
+  <p style="color:#1A1D2E; font-size:0.82rem; margin:0 0 1rem 0; opacity:0.75;">Starting rent · grows {formatting.fmt_pct_compact(growth_pct)}/yr</p>
+  <p style="color:#1A1D2E; font-size:0.82rem; margin:0;">Total rent over {yrs}</p>
+  <p style="color:#1A1D2E; font-size:1.1rem; font-weight:600; margin:0;">{formatting.fmt_dollar(total_rent)}</p>
+</div>
+"""
+
+
+def _buying_card(monthly_total: float, principal: float, interest: float,
+                 tax: float, other: float, total_paid: float, horizon_years: int) -> str:
+    # "Other costs" bundles HOA + HO-6 insurance + PMI (month-1 snapshot, Zillow-style).
+    yrs = f"{horizon_years} year{'s' if horizon_years != 1 else ''}"
+    return f"""
+<div aria-label="Buying summary"
+     style="background:#F5F7FA; padding:1.5rem; border-radius:8px; height:100%; color:#1A1D2E;">
+  <p style="color:#1A1D2E; font-size:1.05rem; font-weight:600; margin:0 0 0.5rem 0;">Buying</p>
+  <p style="color:#1A1D2E; font-size:1.4rem; font-weight:700; margin:0 0 0.5rem 0;">{formatting.fmt_dollar(monthly_total)}<span style="font-size:0.82rem; font-weight:400">&thinsp;/mo</span></p>
+  <table style="width:100%; font-size:0.82rem; border-collapse:collapse; color:#1A1D2E;">
+    <tr><td>Principal</td><td style="text-align:right">{formatting.fmt_dollar(principal)}</td></tr>
+    <tr><td>Interest</td><td style="text-align:right">{formatting.fmt_dollar(interest)}</td></tr>
+    <tr><td>Property Tax</td><td style="text-align:right">{formatting.fmt_dollar(tax)}</td></tr>
+    <tr><td>Other costs</td><td style="text-align:right">{formatting.fmt_dollar(other)}</td></tr>
+  </table>
+  <p style="color:#1A1D2E; font-size:0.82rem; margin:1rem 0 0 0;">Total paid over {yrs}</p>
+  <p style="color:#1A1D2E; font-size:1.1rem; font-weight:600; margin:0;">{formatting.fmt_dollar(total_paid)}</p>
+</div>
+"""
+
+
 # Outcome-neutral by design (UX-DR11): blue (Renting) and purple (Buying) are
 # neutral cross-references to the chart line colors — NOT good/bad signals.
 # Do not collapse to one color or switch to red/green.
@@ -116,6 +151,12 @@ with st.sidebar:
         value=_initial['MARKET_RENT'], step=50.0,
         format="$%.0f",
     )
+    rent_growth_rate = st.slider(
+        "Rent Increase (%/yr)",
+        min_value=0.0, max_value=10.0,
+        value=_initial['RENT_GROWTH_RATE'], step=0.25,
+        format="%.2f%%",
+    )
     appreciation_rate = st.slider(
         "Home Appreciation (%/yr)",
         min_value=0.0, max_value=10.0,
@@ -190,6 +231,7 @@ st.query_params.update(url_state.encode_state({
     'HO6_INSURANCE_ANNUAL':      ho6_insurance_annual,
     'PROPERTY_TAX_RATE':         property_tax_rate,
     'MARKET_RENT':               market_rent,
+    'RENT_GROWTH_RATE':          rent_growth_rate,
     'APPRECIATION_RATE':         appreciation_rate,
     'INVESTMENT_RETURN_RATE':    investment_return_rate,
     'CLOSING_COST_PCT':          closing_cost_pct,
@@ -217,6 +259,8 @@ try:
     renter_balance     = upfront_cash
     renter_monthly     = []
     buyer_surplus_list = []
+    total_rent_paid    = 0.0  # summary column: actual escalating rent paid over period
+    total_buying_paid  = 0.0  # summary column: actual monthly buying costs over period
 
     for month_idx, rec in enumerate(schedule):
         m        = month_idx + 1
@@ -226,11 +270,15 @@ try:
         ins_m    = ho6_insurance_annual / 12
         buying_cost_m = p_and_i + pmi_m + hoa_monthly + tax_m + ins_m
 
-        renter_contribution = max(0.0, buying_cost_m - market_rent)
+        rent_m = calculations.escalated_rent(market_rent, rent_growth_rate, m)
+        total_rent_paid   += rent_m
+        total_buying_paid += buying_cost_m
+
+        renter_contribution = max(0.0, buying_cost_m - rent_m)
         renter_balance      = (renter_balance + renter_contribution) * (1 + monthly_rate)
         renter_monthly.append(renter_balance)
 
-        buyer_surplus_list.append(max(0.0, market_rent - buying_cost_m))
+        buyer_surplus_list.append(max(0.0, rent_m - buying_cost_m))
 
     # Buyer side portfolio: $0 start, grows from monthly surpluses
     buyer_portfolio = calculations.calculate_buyer_investment_portfolio(
@@ -284,7 +332,29 @@ else:
         winner     = "Buying"
         difference = final_buyer - final_renter
 
-    st.markdown(_headline_card(winner, difference, horizon_years, down_pct, break_even_text), unsafe_allow_html=True)
+    # ── Three-column summary (Renting · Buying · Headline) ─────────────────────
+    rec0         = schedule[0]
+    principal_m1 = rec0["principal"]
+    interest_m1  = rec0["interest"]
+    tax_m1       = calculations.calculate_monthly_property_tax(home_price, property_tax_rate, 1)
+    ins_m1       = ho6_insurance_annual / 12
+    other_m1     = hoa_monthly + ins_m1 + rec0["pmi"]
+    buying_total_m1 = principal_m1 + interest_m1 + tax_m1 + other_m1
+
+    col1, col2, col3 = st.columns(3)
+    col1.markdown(
+        _renting_card(market_rent, total_rent_paid, rent_growth_rate, horizon_years),
+        unsafe_allow_html=True,
+    )
+    col2.markdown(
+        _buying_card(buying_total_m1, principal_m1, interest_m1, tax_m1, other_m1,
+                     total_buying_paid, horizon_years),
+        unsafe_allow_html=True,
+    )
+    col3.markdown(
+        _headline_card(winner, difference, horizon_years, down_pct, break_even_text),
+        unsafe_allow_html=True,
+    )
 
     # ── Wealth over time chart ─────────────────────────────────────────────────
     x_vals        = list(range(horizon_years + 1))

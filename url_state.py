@@ -12,6 +12,7 @@ PARAM_MAP = {
     'ins':  'HO6_INSURANCE_ANNUAL',
     'tr':   'PROPERTY_TAX_RATE',
     'rent': 'MARKET_RENT',
+    'rg':   'RENT_GROWTH_RATE',
     'ir':   'INVESTMENT_RETURN_RATE',
     'apr':  'APPRECIATION_RATE',
     'cc':   'CLOSING_COST_PCT',

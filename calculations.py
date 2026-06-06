@@ -124,3 +124,13 @@ def get_annual_snapshots(monthly_values):
     len(result) == len(monthly_values) // 12
     """
     return [monthly_values[i] for i in range(11, len(monthly_values), 12)]
+
+
+def escalated_rent(base_rent, annual_growth_pct, month):
+    """Returns rent for the given 1-indexed month with annual escalation.
+
+    Rent steps up once per year (lease-renewal model): year 1 (months 1-12)
+    equals base_rent exactly, year 2 multiplies by (1 + g), and so on.
+    """
+    years_elapsed = (month - 1) // 12
+    return base_rent * (1 + annual_growth_pct / 100) ** years_elapsed
