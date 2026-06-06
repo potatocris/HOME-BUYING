@@ -127,6 +127,20 @@ for down_pct in DOWN_PAYMENT_SCENARIOS:
         home_price, down_pct, closing_cost_pct, furniture_budget
     )
 
+    # Initial (upfront) cost breakdown for the card. cash_needed ties out exactly
+    # to upfront_cash (down payment + closing fees + improvements).
+    down_payment  = home_price * (down_pct / 100)
+    loan_amount   = home_price - down_payment
+    closing_fees  = home_price * (closing_cost_pct / 100)
+    initial_costs = {
+        "home_price":   home_price,
+        "down_payment": down_payment,
+        "loan_amount":  loan_amount,
+        "improvements": furniture_budget,
+        "closing_fees": closing_fees,
+        "cash_needed":  upfront_cash,
+    }
+
     rec0         = schedule[0]
     p_and_i_m1   = rec0["interest"] + rec0["principal"]
     pmi_m1       = rec0["pmi"]
@@ -190,6 +204,7 @@ for down_pct in DOWN_PAYMENT_SCENARIOS:
     scenarios.append({
         "down_pct":              down_pct,
         "upfront_cash":          upfront_cash,
+        "initial_costs":         initial_costs,
         "schedule":              schedule,
         "monthly_cost_m1":       monthly_cost_m1,
         "monthly_contribution":  monthly_contribution,
@@ -206,6 +221,7 @@ st.title("Scenario Comparison — 4 Down Payment Options")
 cols = st.columns(4)
 for col, sc in zip(cols, scenarios):
     mc = sc["monthly_cost_m1"]
+    ic = sc["initial_costs"]
     recurring_total = mc["p_and_i"] + mc["pmi"] + mc["hoa"] + mc["property_tax"] + mc["insurance"]
 
     card_html = f"""
@@ -213,6 +229,17 @@ for col, sc in zip(cols, scenarios):
      style="background:#F5F7FA;border:1px solid #D1D9E6;border-radius:8px;padding:16px;color:#1A1A1A">
   <div style="font-weight:600;font-size:1.05rem;color:#1A1A1A">{formatting.fmt_pct_compact(sc['down_pct'])} Down</div>
   <div style="font-size:0.82rem;color:#555;margin-bottom:10px">Upfront: {formatting.fmt_dollar(sc['upfront_cash'])}</div>
+  <div style="font-size:0.72rem;font-weight:600;letter-spacing:0.03em;text-transform:uppercase;color:#555;margin-bottom:4px">Initial Costs</div>
+  <table style="width:100%;font-size:0.82rem;border-collapse:collapse;color:#1A1A1A;margin-bottom:10px">
+    <tr style="color:#777"><td>Home Price</td><td style="text-align:right">{formatting.fmt_dollar(ic['home_price'])}</td></tr>
+    <tr style="color:#777"><td>Loan Amount</td><td style="text-align:right">{formatting.fmt_dollar(ic['loan_amount'])}</td></tr>
+    <tr><td style="padding-top:4px;border-top:1px solid #D1D9E6">Down Payment</td><td style="text-align:right;padding-top:4px;border-top:1px solid #D1D9E6">{formatting.fmt_dollar(ic['down_payment'])}</td></tr>
+    <tr><td>Improvements</td><td style="text-align:right">{formatting.fmt_dollar(ic['improvements'])}</td></tr>
+    <tr><td>Closing Fees</td><td style="text-align:right">{formatting.fmt_dollar(ic['closing_fees'])}</td></tr>
+    <tr style="border-top:1px solid #D1D9E6;font-weight:600">
+      <td>Cash Needed</td><td style="text-align:right">{formatting.fmt_dollar(ic['cash_needed'])}</td>
+    </tr>
+  </table>
   <div style="font-size:1.4rem;font-weight:700;margin-bottom:10px;color:#1A1A1A">{formatting.fmt_dollar(recurring_total)}<span style="font-size:0.82rem;font-weight:400">&thinsp;/mo</span></div>
   <table style="width:100%;font-size:0.82rem;border-collapse:collapse;color:#1A1A1A">
     <tr><td>P&amp;I</td><td style="text-align:right">{formatting.fmt_dollar(mc['p_and_i'])}</td></tr>

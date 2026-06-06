@@ -1,5 +1,10 @@
 # Deferred Work Log
 
+## Deferred from: code review of scenarios-initial-costs-group (2026-06-06)
+
+- **`down_payment` and `closing_fees` re-derived in the view, duplicating `calculate_upfront_cash`** (`pages/scenarios.py` scenario loop): The new Initial Costs breakdown recomputes `down_payment = price*down_pct/100` and `closing_fees = price*closing_pct/100` inline, while `calculations.calculate_upfront_cash` (`calculations.py:77`) computes the same terms to produce the total. Two sources of truth — if the upfront-cost definition ever changes (e.g. closing costs on loan amount instead of price), the card's "Cash Needed" total and its component rows silently diverge. Cleaner fix: have `calculate_upfront_cash` (or a sibling) return its components so the view consumes them. Deferred — out of scope for a display-only change.
+- **New Initial Costs `<table>` has no header/scope semantics for screen readers** (`pages/scenarios.py` card HTML): Bare `<tr>/<td>` shipped via `unsafe_allow_html=True`, consistent with the adjacent monthly-cost table (house style). Belongs with the broader accessibility pass tracked in backlog story 3-8-accessibility-attributes.
+
 ## Deferred from: code review of 3-7-number-formatting-outcome-neutrality-enforcement (2026-06-06)
 
 - **`fmt_pct_compact` emits `-0%` for a small negative percentage** (`formatting.py:34`): e.g. `fmt_pct_compact(-0.04)` → `"-0%"`. Unreachable today — the sole call site is the headline `down_pct`, bounded by the slider to [3.0, 30.0], never negative. Becomes relevant only if `fmt_pct_compact` is reused for a signed percentage. A guard (`if round(v, 1) == 0: return "0%"`) would fix it if/when needed.
