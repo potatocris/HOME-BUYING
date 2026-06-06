@@ -54,6 +54,8 @@ FR34: The system decodes slider values from the URL on page load, restoring the 
 FR35: Any person opening a shared URL can interact with all sliders without an account or login
 FR36: The headline correctly identifies the financially superior path regardless of direction — renting wins are stated as renting wins
 FR37: Every numerical output is traceable to a visible, user-adjustable input — no hidden constants or undisclosed assumptions
+FR38: User can set a monthly income/budget via slider; income grows annually at the rent-growth rate + 0.25 pct-pts (derived) — *added via Sprint Change 2026-06-06*
+FR39: User can set an annual cost-growth rate via slider, applied to HOA, HO-6 insurance, and the property-tax assessed value — *added via Sprint Change 2026-06-06*
 
 ### NonFunctional Requirements
 
@@ -188,6 +190,8 @@ So that the calculator reflects Miami's real cost structure.
 **Then** it returns exactly: down payment + (price × closing_pct) + furniture budget (FR16)
 **And** all functions accept plain Python numbers — no Streamlit imports
 
+> **Amended by Sprint Change 2026-06-06:** The property-tax *rate* stays constant, but the *assessed value* now grows annually at the cost-growth rate, capped at 3%/yr (Save Our Homes). HOA and HO-6 insurance also escalate annually at the cost-growth rate. `calculate_monthly_property_tax` gains an `assessment_growth_pct` argument (defaulted for back-compat). See `sprint-change-proposal-2026-06-06.md` §4B/§4F.
+
 ---
 
 ### Story 1.5: Investment Portfolio & Special Assessment Engine
@@ -207,6 +211,8 @@ So that the opportunity cost comparison is financially accurate.
 **When** `special_assessment_amount > 0` and `special_assessment_month` is between 1 and 60
 **Then** the buyer's cash outflow for that specific month includes the special assessment as a lump sum (FR18)
 **And** the special assessment affects no other month
+
+> **Amended by Sprint Change 2026-06-06:** The opportunity-cost model changes from differential to **fixed-budget**. The renter portfolio is seeded with the upfront cash and each month adds `max(0, budget − rent)`; the buyer side-portfolio (engine Story 1.8) each month adds `max(0, budget − total ownership cost)`. The budget steps up once per year at the income-growth rate (`rent_growth + 0.25%`); monthly contributions floor at $0. Implemented under **Epic 4 / Story 4.1**. See `sprint-change-proposal-2026-06-06.md`.
 
 ---
 
@@ -550,3 +556,45 @@ So that screen readers can convey the meaning of each section.
 **And** the ExitPathsTable has an `aria-label` (e.g., "Year-5 exit path comparison table") (UX-DR12)
 **And** the DisclaimerBanner has an `aria-label` (e.g., "Disclaimer and defaults information") (UX-DR12)
 **And** all `aria-label` values are present in the rendered HTML, not just in Python source
+
+---
+
+### Epic 4: Budget-Based Opportunity-Cost Model & Cost Escalation
+
+**Goal:** Replace the differential opportunity-cost model with a shared monthly-budget model, and model annual escalation of ownership costs, so the rent-vs-buy comparison reflects "same income, different housing choice" with realistic Miami cost growth.
+
+**Source:** Sprint Change Proposal 2026-06-06 (approved by Cris). **Requirements covered:** FR17 (rewritten), FR15 (amended), FR38, FR39.
+
+---
+
+### Story 4.1: Budget-Based Model + Cost Escalation
+
+As a user,
+I want the tool to invest whatever's left of my income after housing each month and to grow ownership costs realistically,
+So that the rent-vs-buy comparison reflects how my wealth actually evolves under each choice.
+
+**Acceptance Criteria:**
+
+**Given** a monthly budget (default $3,500) and the comparison horizon
+**When** the rent-vs-buy calculation runs (on both the main page and `pages/scenarios.py`)
+**Then** the renter portfolio is seeded with the upfront cash (down payment + closing + furniture) and each month adds `max(0, budget − rent)`, compounded monthly
+**And** the buyer side-portfolio starts at $0 and each month adds `max(0, budget − total ownership cost)`, compounded monthly, added on top of home equity
+**And** the budget steps up once per year at the income-growth rate, where income-growth = rent-growth + 0.25 percentage points (derived; surfaced in the UI, no separate slider)
+**And** monthly contributions are floored at $0 (a shortfall month invests nothing and never draws down the portfolio)
+
+**Given** the cost-growth slider (default 3%)
+**When** monthly ownership costs are computed
+**Then** HOA and HO-6 insurance escalate annually at the cost-growth rate
+**And** the property-tax *rate* (millage) stays constant while the *assessed value* grows annually at the cost-growth rate, capped at 3%/yr (Save Our Homes), with the homestead exemption still applied from year 2
+
+**Given** the sidebar
+**When** it renders
+**Then** a "Monthly Budget" slider appears in the neutral Comparison Settings group and an "Annual Cost Growth" slider appears in the Buy group
+**And** both values round-trip through the URL (`bud`, `cg`) and fall back to defaults on missing/invalid params
+
+**Given** the test suite
+**When** `python -m pytest -q` runs
+**Then** new tests cover `annual_escalate`, assessed-value growth + the 3% SOH cap, and budget-surplus floor-at-$0 behavior
+**And** all previously-passing tests still pass
+
+**References:** `sprint-change-proposal-2026-06-06.md` (§4 detailed changes, §5 handoff).

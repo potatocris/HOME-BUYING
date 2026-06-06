@@ -50,11 +50,27 @@ def calculate_amortization_schedule(price, down_pct, annual_rate, months=60):
 
 
 HOMESTEAD_EXEMPTION = 50_000  # Florida statutory exemption (dollars, year 2+)
+INCOME_RENT_PREMIUM = 0.25     # income grows 0.25 pct-pts faster than rent (Story 4.1)
+SOH_ASSESSMENT_CAP = 3.0       # Save Our Homes max annual assessed-value growth (%)
 
 
-def calculate_monthly_property_tax(price, tax_rate_pct, month):
-    """Returns monthly property tax in dollars for the given month (1-60)."""
-    assessed = price if month <= 12 else price - HOMESTEAD_EXEMPTION
+def annual_escalate(base, annual_growth_pct, month):
+    """Step `base` up once per year (lease-renewal model). Year 1 (months 1-12) == base."""
+    years_elapsed = (month - 1) // 12
+    return base * (1 + annual_growth_pct / 100) ** years_elapsed
+
+
+def calculate_monthly_property_tax(price, tax_rate_pct, month, assessment_growth_pct=0.0):
+    """Returns monthly property tax in dollars for the given month (1-indexed).
+
+    The tax *rate* (millage) is constant; the *assessed value* grows annually at
+    `assessment_growth_pct`, capped at the Save Our Homes 3%/yr ceiling. The
+    homestead exemption is applied from month 13 (year 2) onward. The default
+    growth of 0.0 reproduces the original flat behavior (back-compat).
+    """
+    capped_growth = min(assessment_growth_pct, SOH_ASSESSMENT_CAP)
+    grown_value = annual_escalate(price, capped_growth, month)
+    assessed = grown_value if month <= 12 else grown_value - HOMESTEAD_EXEMPTION
     return assessed * (tax_rate_pct / 100) / 12
 
 
@@ -103,6 +119,23 @@ def calculate_exit_continue_renting(portfolio_values):
     return portfolio_values[-1] if portfolio_values else 0.0
 
 
+def calculate_renter_investment_portfolio(initial_capital, contribution_list, annual_rate):
+    """Returns per-month portfolio values seeded with `initial_capital` (Story 4.1).
+
+    Mirror of `calculate_buyer_investment_portfolio` but the portfolio starts
+    with `initial_capital` (the renter's upfront-cash seed) instead of $0.
+    contribution_list: per-month amounts of max(0, budget - rent) for each month.
+    annual_rate: investment return rate (percent, e.g. 7.0 for 7%).
+    """
+    monthly_rate = annual_rate / 100 / 12
+    portfolio = []
+    balance = initial_capital
+    for contribution in contribution_list:
+        balance = (balance + contribution) * (1 + monthly_rate)
+        portfolio.append(balance)
+    return portfolio
+
+
 def calculate_buyer_investment_portfolio(monthly_surplus_list, annual_rate):
     """Returns list of buyer's side-portfolio values compounded monthly from $0 (Story 1.8).
 
@@ -126,11 +159,21 @@ def get_annual_snapshots(monthly_values):
     return [monthly_values[i] for i in range(11, len(monthly_values), 12)]
 
 
+def get_annual_averages(monthly_values):
+    """Returns the average of each 12-month block from a monthly list.
+
+    Used for flow values (e.g. monthly invested amount) where a year-end
+    snapshot would be misleading; len(result) == len(monthly_values) // 12.
+    """
+    n_years = len(monthly_values) // 12
+    return [sum(monthly_values[y * 12:(y + 1) * 12]) / 12 for y in range(n_years)]
+
+
 def escalated_rent(base_rent, annual_growth_pct, month):
     """Returns rent for the given 1-indexed month with annual escalation.
 
     Rent steps up once per year (lease-renewal model): year 1 (months 1-12)
     equals base_rent exactly, year 2 multiplies by (1 + g), and so on.
+    Thin wrapper over `annual_escalate` (kept for call-site readability).
     """
-    years_elapsed = (month - 1) // 12
-    return base_rent * (1 + annual_growth_pct / 100) ** years_elapsed
+    return annual_escalate(base_rent, annual_growth_pct, month)

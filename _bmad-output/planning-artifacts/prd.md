@@ -226,6 +226,8 @@ Core insight: tools with lender affiliations hide opportunity cost by design. Th
 ### Assumption Transparency
 
 - Every output traceable to a visible, user-adjustable input — no hidden constants or embedded assumptions
+- The income-growth premium (income grows 0.25 percentage points faster than rent) is a fixed modeling constant and is surfaced in the UI as a derived value
+- The shortfall behavior is disclosed: in any month where housing cost exceeds the budget, the model invests $0 and does not draw down the portfolio (it does not model covering the gap from outside savings) *(Sprint Change 2026-06-06)*
 - All Miami-specific defaults documented with source and last-reviewed date
 - Tool displays "defaults last updated" date so users know whether inputs reflect current market conditions
 
@@ -290,14 +292,19 @@ Core insight: tools with lender affiliations hide opportunity cost by design. Th
 - **FR10:** User can set furniture and improvements budget via slider
 - **FR11:** User can set a one-time special assessment dollar amount and the specific month it occurs
 - **FR12:** User can set landlord scenario inputs: expected monthly rental income, vacancy rate, and property management fee percentage
+- **FR38:** User can set a monthly income/budget via slider (default $3,500). Income grows annually at the rent-growth rate + 0.25 percentage points (derived, not a separate input). *(Added via Sprint Change 2026-06-06.)*
+- **FR39:** User can set an annual cost-growth rate via slider (default 3%), applied to HOA, HO-6 insurance, and the property-tax assessed value. *(Added via Sprint Change 2026-06-06.)*
 
 ### Financial Model — Calculations
 
 - **FR13:** The system calculates a full 60-month amortization schedule for each down payment scenario, tracking principal, interest, and remaining loan balance month by month
 - **FR14:** The system automatically cancels PMI when the loan balance reaches 78% of the original purchase price
-- **FR15:** The system applies the Florida homestead exemption ($50,000 assessed value deduction) to property tax starting in year 2; year-1 taxes calculated on full assessed value
+- **FR15:** The system applies the Florida homestead exemption ($50,000 assessed value deduction) to property tax starting in year 2; year-1 taxes calculated on full assessed value. The property-tax *rate* (millage) is held constant, but the *assessed value* grows annually at the cost-growth rate, capped at the Save Our Homes ceiling of 3%/yr (min of 3% and CPI). *(Assessed-value growth added via Sprint Change 2026-06-06.)*
 - **FR16:** The system calculates total upfront cash as the sum of down payment, closing costs, and furniture/improvements
-- **FR17:** The system models the renter's investment portfolio as down payment capital plus monthly savings (when renting costs less than buying), compounded at the user-set return rate over 60 months
+- **FR17:** The system models opportunity cost with a shared monthly budget (fixed-budget model). Both a renter portfolio and a buyer side-portfolio invest what remains of the budget after housing each month, compounded monthly at the user-set return rate over the comparison horizon:
+  - **Renter:** portfolio is seeded with the buyer's upfront cash (down payment + closing + furniture), then each month adds `max(0, budget − rent)`.
+  - **Buyer:** side-portfolio starts at $0, then each month adds `max(0, budget − total ownership cost)` (P&I + PMI + HOA + property tax + insurance), and is added on top of home equity.
+  - The budget steps up once per year at the income-growth rate (rent-growth + 0.25%); monthly contributions are floored at $0 (shortfall months invest nothing and do not draw down the portfolio). *(Replaces the prior differential model via Sprint Change 2026-06-06.)*
 - **FR18:** The system applies the special assessment as a single lump-sum cash outflow at the user-specified month
 - **FR19:** The system calculates year-5 sell exit value as gross sale price minus realtor commission (user-configurable, default 5.5%) and Florida documentary stamp tax (~0.7%)
 - **FR20:** The system calculates year-5 rent-out exit as cumulative net cash flow (rental income minus vacancy, management fee, and carrying costs) plus remaining equity

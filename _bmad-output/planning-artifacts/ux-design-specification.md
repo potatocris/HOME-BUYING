@@ -511,6 +511,8 @@ textColor = "#1A1D2E"
 - **Input grouping:** Stacked expanders below the comparison section — Essential Inputs (always open on load), Year-5 Exit Paths, Advanced Inputs. Progressive disclosure prevents form overwhelm.
 - **Headline panel:** Full-width card with secondary background, centered text, prominent dollar amount — visually separated from both the comparison table and the input section
 
+> **Sprint Change 2026-06-06 — new inputs (UX-DR7 addendum).** Two sliders are added to the sidebar: **Monthly Budget** in the neutral *Comparison Settings* group (shared across rent & buy), and **Annual Cost Growth** in the *Buy* group. A caption surfaces the derived income-growth (rent + 0.25%/yr). All other grouping/labeling rules (UX-DR8–DR13) are unchanged. See `sprint-change-proposal-2026-06-06.md`.
+
 ### Accessibility Considerations
 
 - `#2B6CB0` on `#FFFFFF`: contrast ratio ~5.9:1 — passes WCAG AA for normal text, AA for large text

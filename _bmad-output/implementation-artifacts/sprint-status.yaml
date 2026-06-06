@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-22
-last_updated: 2026-06-06  # story 3.7 done (code review passed)
+last_updated: 2026-06-06  # Story 4.1 implemented → review (130 tests pass)
 project: Miami Home Buying Decision Tool
 project_key: NOKEY
 tracking_system: file-system
@@ -92,3 +92,13 @@ development_status:
   3-7-number-formatting-outcome-neutrality-enforcement: done
   3-8-accessibility-attributes: backlog
   epic-3-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────
+  # Epic 4: Budget-Based Opportunity-Cost Model & Cost Escalation
+  # Source: sprint-change-proposal-2026-06-06.md (approved 2026-06-06)
+  # Fixed-budget investing (renter & buyer) + annual escalation of HOA,
+  # insurance, and tax assessed value (SOH-capped). Income = rent + 0.25%.
+  # ─────────────────────────────────────────────────────────────
+  epic-4: in-progress
+  4-1-budget-based-model-cost-escalation: review
+  epic-4-retrospective: optional

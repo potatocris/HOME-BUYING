@@ -88,3 +88,5 @@ requirements.txt    ← Pinned dependencies
 - `url_state.py` isolated so the 2,000-character URL budget can be validated independently
 
 **Note:** Project initialization and module scaffolding is the first implementation story.
+
+> **Sprint Change 2026-06-06 — Budget-based model & cost escalation.** The opportunity-cost engine moves from a differential model to a shared fixed-budget model: both the renter and buyer portfolios invest `max(0, budget − housing cost)` per month, with the budget escalating annually (income = rent-growth + 0.25%). `calculations.py` gains `annual_escalate()` and an `assessment_growth_pct` argument on `calculate_monthly_property_tax()` (HOA, insurance, and tax assessed value escalate at a shared cost-growth rate, tax capped at the 3% Save Our Homes ceiling). Two new inputs (`MONTHLY_BUDGET`, `COST_GROWTH_RATE`) are added to `defaults.py` and serialized in `url_state.py` (`bud`, `cg`). Pure-Python isolation and the 2,000-char URL budget are preserved. See `sprint-change-proposal-2026-06-06.md`.

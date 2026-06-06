@@ -55,7 +55,7 @@ so that every number in the tool follows the UX specification (UX-DR10) and no o
 - [x] **Task 7: Regression + smoke (AC: 8)**
   - [x] `python -m pytest tests/ -q` — **109 passed** (94 prior + 15 new), zero regressions.
   - [x] AST parse clean on `app.py`, `pages/scenarios.py`, `formatting.py` — printed `AST OK`.
-  - [ ] Manual smoke (user): headline + annual table render dollars unchanged; on Page 2 set appreciation 0% → negative exit shows `($X,XXX)`; set down payment 12.5% → headline reads "At 12.5% down".
+  - [x] Manual smoke (user, 2026-06-06): verified headline + annual table render dollars unchanged; Page 2 negatives show `($X,XXX)`; down payment 12.5% → headline reads "At 12.5% down".
 
 ## Dev Notes
 

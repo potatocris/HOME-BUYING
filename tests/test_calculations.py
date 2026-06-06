@@ -9,7 +9,10 @@ from calculations import (
     calculate_exit_continue_renting,
     calculate_buyer_investment_portfolio,
     get_annual_snapshots,
+    get_annual_averages,
     escalated_rent,
+    annual_escalate,
+    calculate_renter_investment_portfolio,
 )
 
 
@@ -522,6 +525,33 @@ def test_annual_snapshots_partial_year_ignored():
     assert len(result) == 5
 
 
+# ── get_annual_averages (monthly invested amount) ────────────────────────────
+
+def test_annual_averages_60_months_returns_5_values():
+    result = get_annual_averages(list(range(1, 61)))
+    assert len(result) == 5
+
+
+def test_annual_averages_correct_means():
+    # Values [1..60]: year 1 = mean(1..12) = 6.5, year 2 = mean(13..24) = 18.5, ...
+    result = get_annual_averages(list(range(1, 61)))
+    assert result[0] == 6.5
+    assert result[1] == 18.5
+    assert result[4] == 54.5
+
+
+def test_annual_averages_constant_contribution():
+    # Constant $500/mo → every year's average is exactly $500
+    result = get_annual_averages([500.0] * 36)
+    assert result == [500.0, 500.0, 500.0]
+
+
+def test_annual_averages_partial_year_ignored():
+    # 65 months: 5 complete years, 5 leftover months → still 5 averages
+    result = get_annual_averages(list(range(1, 66)))
+    assert len(result) == 5
+
+
 # ── escalated_rent ───────────────────────────────────────────────────────────
 
 def test_escalated_rent_year_one_is_flat():
@@ -544,3 +574,94 @@ def test_escalated_rent_zero_growth_never_changes():
 def test_escalated_rent_compounds_annually():
     # Year 3 (month 25) → base * 1.03^2
     assert abs(escalated_rent(2_000.0, 3.0, 25) - 2_000.0 * 1.03 ** 2) < 0.001
+
+
+# ── annual_escalate (Story 4.1) ──────────────────────────────────────────────
+
+def test_annual_escalate_year_one_is_flat():
+    # Months 1-12 (year 1) all equal the base — no increase yet
+    for m in range(1, 13):
+        assert annual_escalate(3_500.0, 2.0, m) == 3_500.0
+
+
+def test_annual_escalate_year_two_step():
+    # Month 13 begins year 2 → one annual increase applied
+    assert abs(annual_escalate(3_500.0, 2.0, 13) - 3_570.0) < 0.001
+    assert abs(annual_escalate(3_500.0, 2.0, 24) - 3_570.0) < 0.001  # still year 2
+
+
+def test_annual_escalate_zero_growth_never_changes():
+    assert annual_escalate(3_500.0, 0.0, 1) == 3_500.0
+    assert annual_escalate(3_500.0, 0.0, 240) == 3_500.0
+
+
+def test_annual_escalate_compounds_annually():
+    # Year 3 (month 25) → base * 1.0325^2
+    assert abs(annual_escalate(3_500.0, 3.25, 25) - 3_500.0 * 1.0325 ** 2) < 0.001
+
+
+def test_escalated_rent_matches_annual_escalate():
+    # escalated_rent delegates to annual_escalate — identical results
+    for m in (1, 12, 13, 25, 60):
+        assert escalated_rent(2_000.0, 3.0, m) == annual_escalate(2_000.0, 3.0, m)
+
+
+# ── property tax assessed-value growth + SOH cap (Story 4.1) ─────────────────
+
+def test_property_tax_growth_default_arg_is_flat():
+    # Back-compat: omitting assessment_growth_pct reproduces the old flat behavior
+    flat = calculate_monthly_property_tax(300_000, 1.3, 13)
+    grown_zero = calculate_monthly_property_tax(300_000, 1.3, 13, 0.0)
+    assert flat == grown_zero
+
+
+def test_property_tax_assessed_value_grows():
+    # Year 2 (month 13): assessed value = (price grown 1 yr) − homestead, then × rate/12
+    grown = 300_000 * 1.03
+    expected = (grown - 50_000) * (1.3 / 100) / 12
+    result = calculate_monthly_property_tax(300_000, 1.3, 13, 3.0)
+    assert abs(result - expected) < 0.001
+
+
+def test_property_tax_growth_capped_at_soh_3pct():
+    # A cost-growth slider above 3% must still cap assessed-value growth at 3% (Save Our Homes)
+    at_cap = calculate_monthly_property_tax(300_000, 1.3, 13, 3.0)
+    above_cap = calculate_monthly_property_tax(300_000, 1.3, 13, 6.0)
+    assert above_cap == at_cap
+
+
+def test_property_tax_growth_year1_unaffected_no_exemption():
+    # Year 1 (month 1): no growth applied yet (year 1 = base), no homestead exemption
+    expected = 300_000 * (1.3 / 100) / 12
+    assert abs(calculate_monthly_property_tax(300_000, 1.3, 1, 3.0) - expected) < 0.001
+
+
+# ── calculate_renter_investment_portfolio (Story 4.1) ────────────────────────
+
+def test_renter_portfolio_returns_correct_length():
+    result = calculate_renter_investment_portfolio(10_000, [500.0] * 60, 7.0)
+    assert len(result) == 60
+
+
+def test_renter_portfolio_month1_formula():
+    # month1 = (initial + contribution) * (1 + monthly_rate)
+    result = calculate_renter_investment_portfolio(10_000, [500.0], 7.0)
+    expected = (10_000 + 500.0) * (1 + 7.0 / 100 / 12)
+    assert abs(result[0] - expected) < 0.001
+
+
+def test_renter_portfolio_matches_investment_portfolio_constant_contribution():
+    # Constant contribution must match the legacy fixed-contribution function
+    months = 60
+    ref = calculate_investment_portfolio(10_000, 500.0, 7.0, months)
+    new = calculate_renter_investment_portfolio(10_000, [500.0] * months, 7.0)
+    for a, b in zip(ref, new):
+        assert abs(a - b) < 0.0001
+
+
+def test_renter_portfolio_floor_zero_contribution_compounds_only():
+    # A $0 contribution month (the floor) still compounds the existing balance
+    result = calculate_renter_investment_portfolio(10_000, [0.0, 0.0], 12.0)
+    r = 12.0 / 100 / 12
+    assert abs(result[0] - 10_000 * (1 + r)) < 0.001
+    assert abs(result[1] - 10_000 * (1 + r) ** 2) < 0.001

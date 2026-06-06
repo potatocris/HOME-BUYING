@@ -47,6 +47,19 @@ with st.sidebar:
         value=defaults.MARKET_RENT, step=50.0,
         format="$%.0f",
     )
+    rent_growth_rate = st.slider(
+        "Rent Increase (%/yr)",
+        min_value=0.0, max_value=10.0,
+        value=defaults.RENT_GROWTH_RATE, step=0.25,
+        format="%.2f%%",
+    )
+    monthly_budget = st.slider(
+        "Monthly Budget",
+        min_value=1_000.0, max_value=10_000.0,
+        value=defaults.MONTHLY_BUDGET, step=100.0,
+        format="$%.0f",
+    )
+    st.caption("Income grows at rent + 0.25%/yr")
     appreciation_rate = st.slider(
         "Home Appreciation (%/yr)",
         min_value=0.0, max_value=10.0,
@@ -131,11 +144,20 @@ for down_pct in DOWN_PAYMENT_SCENARIOS:
         "total":        total_m1,
     }
 
-    monthly_contribution = max(0.0, total_m1 - market_rent)
-    portfolio_values     = calculations.calculate_investment_portfolio(
-        initial_capital=upfront_cash,
-        monthly_contribution=monthly_contribution,
-        annual_rate=investment_return_rate,
+    # Budget-based renter portfolio (Story 4.1): invest max(0, budget − rent) each
+    # month, seeded with upfront cash. Budget grows at rent-growth + 0.25 pct-pts;
+    # rent escalates annually. (Page 2 has no per-month buyer cost trajectory, so the
+    # cost-growth input lives only on the main page.)
+    income_growth        = rent_growth_rate + calculations.INCOME_RENT_PREMIUM
+    renter_contrib_list  = []
+    for m_idx in range(len(schedule)):
+        m        = m_idx + 1
+        rent_m   = calculations.escalated_rent(market_rent, rent_growth_rate, m)
+        budget_m = calculations.annual_escalate(monthly_budget, income_growth, m)
+        renter_contrib_list.append(max(0.0, budget_m - rent_m))
+    monthly_contribution = renter_contrib_list[0]  # month-1 figure (card display)
+    portfolio_values     = calculations.calculate_renter_investment_portfolio(
+        upfront_cash, renter_contrib_list, investment_return_rate
     )
 
     remaining_balance = schedule[-1]["balance"]

@@ -23,6 +23,8 @@ PARAM_MAP = {
     'rc':   'REALTOR_COMMISSION_PCT',
     'dp':   'DOWN_PCT',
     'yr':   'HORIZON_YEARS',
+    'bud':  'MONTHLY_BUDGET',
+    'cg':   'COST_GROWTH_RATE',
 }
 
 INT_PARAMS = {'yr'}
