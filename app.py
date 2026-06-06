@@ -26,7 +26,11 @@ def _headline_card(winner: str, difference: float, horizon_years: int, down_pct:
 
 
 def _renting_card(starting_rent: float, total_rent: float, growth_pct: float,
-                  monthly_invested: float, horizon_years: int) -> str:
+                  monthly_invested: float, total_returns: float, net_total: float,
+                  horizon_years: int) -> str:
+    # Row order (cost-then-investment story): monthly cost → total cost →
+    # monthly invested → total returns (final portfolio value) → net total
+    # (total returns − total rent paid; may be negative → fmt_dollar renders ($X)).
     yrs = f"{horizon_years} year{'s' if horizon_years != 1 else ''}"
     return f"""
 <div aria-label="Renting summary"
@@ -34,18 +38,23 @@ def _renting_card(starting_rent: float, total_rent: float, growth_pct: float,
   <p style="color:#2B6CB0; font-size:1.05rem; font-weight:600; margin:0 0 0.5rem 0;">Renting</p>
   <p style="color:#1A1D2E; font-size:1.4rem; font-weight:700; margin:0;">{formatting.fmt_dollar(starting_rent)}<span style="font-size:0.82rem; font-weight:400">&thinsp;/mo</span></p>
   <p style="color:#1A1D2E; font-size:0.82rem; margin:0 0 1rem 0; opacity:0.75;">Starting rent · grows {formatting.fmt_pct_compact(growth_pct)}/yr</p>
+  <p style="color:#1A1D2E; font-size:0.82rem; margin:0;">Total rent over {yrs}</p>
+  <p style="color:#1A1D2E; font-size:1.1rem; font-weight:600; margin:0 0 1rem 0;">{formatting.fmt_dollar(total_rent)}</p>
   <p style="color:#1A1D2E; font-size:0.82rem; margin:0;">Invested monthly (start)</p>
   <p style="color:#1A1D2E; font-size:1.1rem; font-weight:600; margin:0 0 1rem 0;">{formatting.fmt_dollar(monthly_invested)}<span style="font-size:0.82rem; font-weight:400">&thinsp;/mo</span></p>
-  <p style="color:#1A1D2E; font-size:0.82rem; margin:0;">Total rent over {yrs}</p>
-  <p style="color:#1A1D2E; font-size:1.1rem; font-weight:600; margin:0;">{formatting.fmt_dollar(total_rent)}</p>
+  <p style="color:#1A1D2E; font-size:0.82rem; margin:0;">Total returns over {yrs}</p>
+  <p style="color:#1A1D2E; font-size:1.1rem; font-weight:600; margin:0 0 1rem 0;">{formatting.fmt_dollar(total_returns)}</p>
+  <p style="color:#1A1D2E; font-size:0.82rem; margin:0;">Net total</p>
+  <p style="color:#1A1D2E; font-size:1.1rem; font-weight:600; margin:0;">{formatting.fmt_dollar(net_total)}</p>
 </div>
 """
 
 
 def _buying_card(monthly_total: float, principal: float, interest: float,
-                 tax: float, other: float, total_paid: float,
-                 monthly_invested: float, horizon_years: int) -> str:
-    # "Other costs" bundles HOA + HO-6 insurance + PMI (month-1 snapshot, Zillow-style).
+                 tax: float, hoa: float, insurance: float, pmi: float,
+                 total_paid: float, monthly_invested: float, horizon_years: int) -> str:
+    # Itemized month-1 cost snapshot (Zillow-style): HOA, HO-6 insurance, and PMI
+    # are listed separately rather than bundled into one "Other costs" row.
     yrs = f"{horizon_years} year{'s' if horizon_years != 1 else ''}"
     return f"""
 <div aria-label="Buying summary"
@@ -56,7 +65,9 @@ def _buying_card(monthly_total: float, principal: float, interest: float,
     <tr><td>Principal</td><td style="text-align:right">{formatting.fmt_dollar(principal)}</td></tr>
     <tr><td>Interest</td><td style="text-align:right">{formatting.fmt_dollar(interest)}</td></tr>
     <tr><td>Property Tax</td><td style="text-align:right">{formatting.fmt_dollar(tax)}</td></tr>
-    <tr><td>Other costs</td><td style="text-align:right">{formatting.fmt_dollar(other)}</td></tr>
+    <tr><td>HOA</td><td style="text-align:right">{formatting.fmt_dollar(hoa)}</td></tr>
+    <tr><td>HO-6 Insurance</td><td style="text-align:right">{formatting.fmt_dollar(insurance)}</td></tr>
+    <tr><td>PMI</td><td style="text-align:right">{formatting.fmt_dollar(pmi)}</td></tr>
   </table>
   <p style="color:#1A1D2E; font-size:0.82rem; margin:1rem 0 0 0;">Invested monthly (start)</p>
   <p style="color:#1A1D2E; font-size:1.1rem; font-weight:600; margin:0;">{formatting.fmt_dollar(monthly_invested)}<span style="font-size:0.82rem; font-weight:400">&thinsp;/mo</span></p>
@@ -392,6 +403,11 @@ except Exception:
 
 st.markdown(_disclaimer_banner(defaults.DEFAULTS_LAST_UPDATED), unsafe_allow_html=True)
 st.title("Miami Home Buying Decision Tool")
+st.markdown(
+    f'<p style="color:#1A1D2E; font-size:1rem; margin:-0.75rem 0 1rem 0;">'
+    f'Monthly budget: <strong>{formatting.fmt_dollar(monthly_budget)}</strong></p>',
+    unsafe_allow_html=True,
+)
 
 if _calc_error:
     st.error("Unable to calculate — please check your inputs.")
@@ -428,17 +444,18 @@ else:
     interest_m1  = rec0["interest"]
     tax_m1       = calculations.calculate_monthly_property_tax(home_price, property_tax_rate, 1)
     ins_m1       = ho6_insurance_annual / 12
-    other_m1     = hoa_monthly + ins_m1 + rec0["pmi"]
-    buying_total_m1 = principal_m1 + interest_m1 + tax_m1 + other_m1
+    buying_total_m1 = principal_m1 + interest_m1 + tax_m1 + hoa_monthly + ins_m1 + rec0["pmi"]
 
     col1, col2, col3 = st.columns(3)
     col1.markdown(
         _renting_card(market_rent, total_rent_paid, rent_growth_rate,
-                      renter_invest_m1, horizon_years),
+                      renter_invest_m1, final_renter, final_renter - total_rent_paid,
+                      horizon_years),
         unsafe_allow_html=True,
     )
     col2.markdown(
-        _buying_card(buying_total_m1, principal_m1, interest_m1, tax_m1, other_m1,
+        _buying_card(buying_total_m1, principal_m1, interest_m1, tax_m1,
+                     hoa_monthly, ins_m1, rec0["pmi"],
                      total_buying_paid, buyer_invest_m1, horizon_years),
         unsafe_allow_html=True,
     )
