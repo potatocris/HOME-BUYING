@@ -1,6 +1,7 @@
 import streamlit as st
 import defaults
 import calculations
+import formatting
 
 st.set_page_config(page_title="Scenario Comparison", layout="wide")
 
@@ -180,28 +181,25 @@ for down_pct in DOWN_PAYMENT_SCENARIOS:
 # ── Main area ─────────────────────────────────────────────────────────────────
 st.title("Scenario Comparison — 4 Down Payment Options")
 
-def _fmt(amount: float) -> str:
-    return f"${amount:,.0f}"
-
 cols = st.columns(4)
 for col, sc in zip(cols, scenarios):
     mc = sc["monthly_cost_m1"]
     recurring_total = mc["p_and_i"] + mc["pmi"] + mc["hoa"] + mc["property_tax"] + mc["insurance"]
 
     card_html = f"""
-<div aria-label="{sc['down_pct']}% down payment scenario"
+<div aria-label="{formatting.fmt_pct_compact(sc['down_pct'])} down payment scenario"
      style="background:#F5F7FA;border:1px solid #D1D9E6;border-radius:8px;padding:16px;color:#1A1A1A">
-  <div style="font-weight:600;font-size:1.05rem;color:#1A1A1A">{sc['down_pct']}% Down</div>
-  <div style="font-size:0.82rem;color:#555;margin-bottom:10px">Upfront: {_fmt(sc['upfront_cash'])}</div>
-  <div style="font-size:1.4rem;font-weight:700;margin-bottom:10px;color:#1A1A1A">{_fmt(recurring_total)}<span style="font-size:0.82rem;font-weight:400">&thinsp;/mo</span></div>
+  <div style="font-weight:600;font-size:1.05rem;color:#1A1A1A">{formatting.fmt_pct_compact(sc['down_pct'])} Down</div>
+  <div style="font-size:0.82rem;color:#555;margin-bottom:10px">Upfront: {formatting.fmt_dollar(sc['upfront_cash'])}</div>
+  <div style="font-size:1.4rem;font-weight:700;margin-bottom:10px;color:#1A1A1A">{formatting.fmt_dollar(recurring_total)}<span style="font-size:0.82rem;font-weight:400">&thinsp;/mo</span></div>
   <table style="width:100%;font-size:0.82rem;border-collapse:collapse;color:#1A1A1A">
-    <tr><td>P&amp;I</td><td style="text-align:right">{_fmt(mc['p_and_i'])}</td></tr>
-    <tr><td>PMI</td><td style="text-align:right">{_fmt(mc['pmi'])}</td></tr>
-    <tr><td>HOA</td><td style="text-align:right">{_fmt(mc['hoa'])}</td></tr>
-    <tr><td>Property Tax</td><td style="text-align:right">{_fmt(mc['property_tax'])}</td></tr>
-    <tr><td>Insurance</td><td style="text-align:right">{_fmt(mc['insurance'])}</td></tr>
+    <tr><td>P&amp;I</td><td style="text-align:right">{formatting.fmt_dollar(mc['p_and_i'])}</td></tr>
+    <tr><td>PMI</td><td style="text-align:right">{formatting.fmt_dollar(mc['pmi'])}</td></tr>
+    <tr><td>HOA</td><td style="text-align:right">{formatting.fmt_dollar(mc['hoa'])}</td></tr>
+    <tr><td>Property Tax</td><td style="text-align:right">{formatting.fmt_dollar(mc['property_tax'])}</td></tr>
+    <tr><td>Insurance</td><td style="text-align:right">{formatting.fmt_dollar(mc['insurance'])}</td></tr>
     <tr style="border-top:1px solid #D1D9E6;font-weight:600">
-      <td>Total</td><td style="text-align:right">{_fmt(recurring_total)}</td>
+      <td>Total</td><td style="text-align:right">{formatting.fmt_dollar(recurring_total)}</td>
     </tr>
   </table>
 </div>

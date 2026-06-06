@@ -1,33 +1,33 @@
 import streamlit as st
 import defaults
 import calculations
+import formatting
 import plotly.graph_objects as go
 import pandas as pd
 import url_state
 
 
 def _headline_card(winner: str, difference: float, horizon_years: int, down_pct: float, break_even_text: str) -> str:
+    # Accent #2B6CB0 is winner-independent (UX-DR11): only the text changes
+    # between renting-wins and buying-wins, never the color.
     return f"""
 <div aria-label="Financial comparison headline"
      style="background:#F5F7FA; padding:1.5rem 2rem; border-radius:8px; margin-bottom:1.5rem;">
   <p style="color:#1A1D2E; font-size:0.875rem; margin:0 0 0.25rem 0;">At current assumptions</p>
   <p style="color:#2B6CB0; font-size:2.5rem; font-weight:700; margin:0 0 0.25rem 0; line-height:1.1;">
-    ${difference:,.0f}
+    {formatting.fmt_dollar(difference)}
   </p>
   <p style="color:#1A1D2E; font-size:1.1rem; font-weight:400; margin:0 0 0.5rem 0;">
-    {winner} is better by ${difference:,.0f} over {horizon_years} year{"s" if horizon_years != 1 else ""}
+    {winner} is better by {formatting.fmt_dollar(difference)} over {horizon_years} year{"s" if horizon_years != 1 else ""}
   </p>
-  <p style="color:#1A1D2E; font-size:0.875rem; margin:0; opacity:0.75;">At {down_pct:.0f}% down · {break_even_text}</p>
+  <p style="color:#1A1D2E; font-size:0.875rem; margin:0; opacity:0.75;">At {formatting.fmt_pct_compact(down_pct)} down · {break_even_text}</p>
 </div>
 """
 
 
-def _fmt_dollar(v: float) -> str:
-    if v < 0:
-        return f"(${abs(v):,.0f})"
-    return f"${v:,.0f}"
-
-
+# Outcome-neutral by design (UX-DR11): blue (Renting) and purple (Buying) are
+# neutral cross-references to the chart line colors — NOT good/bad signals.
+# Do not collapse to one color or switch to red/green.
 _BETTER_COLORS = {
     "Renting": "color: #2B6CB0; font-weight: 600",
     "Buying":  "color: #6B46C1; font-weight: 600",
@@ -353,9 +353,9 @@ else:
         diff = r - b
         table_rows.append({
             "Year": i + 1,
-            "Rent + Invest": _fmt_dollar(r),
-            "Buy + Invest": _fmt_dollar(b),
-            "Difference": _fmt_dollar(diff),
+            "Rent + Invest": formatting.fmt_dollar(r),
+            "Buy + Invest": formatting.fmt_dollar(b),
+            "Difference": formatting.fmt_dollar(diff),
             "Better": "Renting" if r >= b else "Buying",
         })
 

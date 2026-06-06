@@ -1,5 +1,9 @@
 # Deferred Work Log
 
+## Deferred from: code review of 3-7-number-formatting-outcome-neutrality-enforcement (2026-06-06)
+
+- **`fmt_pct_compact` emits `-0%` for a small negative percentage** (`formatting.py:34`): e.g. `fmt_pct_compact(-0.04)` → `"-0%"`. Unreachable today — the sole call site is the headline `down_pct`, bounded by the slider to [3.0, 30.0], never negative. Becomes relevant only if `fmt_pct_compact` is reused for a signed percentage. A guard (`if round(v, 1) == 0: return "0%"`) would fix it if/when needed.
+
 ## Deferred from: code review of 3-5-chart-and-table-polish (2026-06-06)
 
 - **Styler `subset=["Better"]` would raise `KeyError` on a zero-column DataFrame** (`app.py` annual table block): `df.style.map(..., subset=["Better"])` assumes the "Better" column exists. Unreachable today — the horizon `select_slider` floor of 5 years guarantees ≥5 table rows — but latent if the minimum horizon is ever lowered below 12 months.
