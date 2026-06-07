@@ -17,7 +17,13 @@
       "Bash(echo \"exit:$?\")",
       "Bash(.venv\\\\Scripts\\\\python.exe -m pytest tests/ -v)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(python -m streamlit run app.py --server.port 8502 --server.headless true)",
+      "Bash(echo \"PID=$!\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8502/)",
+      "Bash(node -e \"const p = require\\('puppeteer'\\); console.log\\('puppeteer ok'\\)\")",
+      "Bash(git *)",
+      "Bash(findstr /R \"fmt_dollar exit_sell difference home_equity\")"
     ]
   }
 }

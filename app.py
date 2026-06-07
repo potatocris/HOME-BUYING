@@ -465,9 +465,15 @@ else:
     )
 
     # ── Wealth over time chart ─────────────────────────────────────────────────
+    # Year-0 anchors = each side's net worth at the moment of decision.
+    #   Renter holds all upfront cash as liquid/invested wealth (down + closing + furniture).
+    #   Buyer has converted the down payment into home equity (= price − loan); closing
+    #   costs and furniture are sunk, so they are NOT wealth. The year-0 gap between the
+    #   two lines therefore equals those one-time sunk costs (closing + furniture).
     x_vals        = list(range(horizon_years + 1))
+    down_payment  = home_price * down_pct / 100
     renter_series = [upfront_cash] + renter_annual
-    buyer_series  = [0.0] + buyer_annual
+    buyer_series  = [down_payment] + buyer_annual
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(
@@ -531,11 +537,11 @@ else:
         diff = r - b
         table_rows.append({
             "Year": i + 1,
-            "Rent + Invest": formatting.fmt_dollar(r),
-            "Buy + Invest": formatting.fmt_dollar(b),
-            "Difference": formatting.fmt_dollar(diff),
+            "Rent": formatting.fmt_dollar(r),
             "Rent: Invested/mo": formatting.fmt_dollar(renter_invest_annual[i]),
+            "Buy": formatting.fmt_dollar(b),
             "Buy: Invested/mo": formatting.fmt_dollar(buyer_invest_annual[i]),
+            "Difference": formatting.fmt_dollar(diff),
             "Better": "Renting" if r >= b else "Buying",
         })
 
